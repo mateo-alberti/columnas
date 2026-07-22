@@ -6,48 +6,135 @@
 <title>Línea del tiempo — Historia con Gabriel Quirici</title>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/vis-timeline/7.7.3/vis-timeline-graph2d.min.css" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-timeline/7.7.3/vis-timeline-graph2d.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#0f1420; --panel:#161d2e; --ink:#e8ecf5; --muted:#93a1bd;
-    --accent:#4f9cf9; --accent2:#f0a04b; --line:#2a3550;
+    --bg:#e6dabd; --panel:#f2e8cf; --panel2:#efe4c8;
+    --ink:#3a2c1a; --ink2:#4a3618; --muted:#8a7350;
+    --accent:#7c2b1e; --accent2:#9c3b23; --gold:#a8792c;
+    --line:#c7b085; --line2:#b39c73;
+    --grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
   }
   *{box-sizing:border-box}
-  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-       background:var(--bg);color:var(--ink)}
-  header{padding:20px 26px 12px}
-  h1{margin:0;font-size:20px;font-weight:650;letter-spacing:.2px}
-  .sub{margin:6px 0 0;color:var(--muted);font-size:13px;line-height:1.5}
-  .bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 26px 14px}
-  .bar input{flex:1;min-width:200px;background:var(--panel);border:1px solid var(--line);
-       color:var(--ink);border-radius:8px;padding:9px 12px;font-size:14px;outline:none}
+  html{overflow-x:hidden}
+  body{margin:0;font-family:"EB Garamond",Georgia,"Times New Roman",serif;font-size:16px;
+       color:var(--ink);background-color:var(--bg);
+       background-image:var(--grain),
+         radial-gradient(ellipse at 18% 12%, rgba(255,250,235,.60), transparent 45%),
+         radial-gradient(ellipse at 85% 88%, rgba(110,80,40,.14), transparent 50%),
+         radial-gradient(circle at 50% 45%, rgba(150,115,70,.05), transparent 75%);
+       background-attachment:fixed}
+  header{padding:30px 26px 6px;text-align:center}
+  h1{margin:0;font-family:"Cinzel",serif;font-size:30px;font-weight:600;letter-spacing:1.5px;
+     color:var(--ink2);text-shadow:0 1px 0 rgba(255,250,235,.6)}
+  .sub{margin:10px auto 0;max-width:820px;color:var(--muted);font-size:15.5px;line-height:1.55;font-style:italic}
+  header::after{content:"❧";display:block;text-align:center;color:var(--gold);
+     font-size:22px;margin-top:12px;opacity:.85}
+  .bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;padding:6px 26px 14px}
+  .bar input{flex:1;min-width:220px;max-width:520px;background:#fbf5e4;border:1px solid var(--line2);
+       color:var(--ink);border-radius:3px;padding:10px 13px;font-size:15px;outline:none;font-family:inherit;
+       box-shadow:inset 0 1px 3px rgba(120,90,50,.18)}
+  .bar input::placeholder{color:#a5906c;font-style:italic}
   .bar input:focus{border-color:var(--accent)}
-  button{background:var(--panel);border:1px solid var(--line);color:var(--ink);
-       border-radius:8px;padding:9px 13px;font-size:13px;cursor:pointer;transition:.15s}
-  button:hover{border-color:var(--accent);color:#fff}
-  .legend{display:flex;gap:16px;align-items:center;color:var(--muted);font-size:12px;padding:0 26px 10px}
-  .dot{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:6px;vertical-align:-1px}
-  #tl{margin:0 16px 22px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel)}
+  button{background:#f0e5ca;border:1px solid var(--line2);color:var(--ink2);
+       border-radius:3px;padding:10px 14px;font-size:14px;cursor:pointer;transition:.15s;
+       font-family:"EB Garamond",serif;letter-spacing:.3px}
+  button:hover{border-color:var(--accent);color:var(--accent);background:#f7eed6}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;align-items:center;justify-content:center;
+       color:var(--muted);font-size:13.5px;font-style:italic;padding:0 26px 12px}
+  .dot{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:6px;vertical-align:-1px}
+  #tlwrap{position:relative;margin:0 22px 26px}
+  #tl{border:1px solid var(--line2);border-radius:2px;overflow:hidden;
+       background-color:var(--panel);background-image:var(--grain);background-blend-mode:multiply;
+       box-shadow:0 0 0 4px var(--panel),0 0 0 5px var(--line2),0 8px 26px rgba(80,55,25,.22)}
+  .vis-panel.vis-center{overflow:hidden !important}
+  .zoomnote{position:absolute;left:0;right:0;bottom:0;z-index:6;pointer-events:none;display:none;
+       text-align:center;font-family:"EB Garamond",Georgia,serif;font-style:italic;font-size:13.5px;
+       color:var(--muted);letter-spacing:.2px;padding:7px 14px;
+       background:var(--panel);border-top:1px solid #9a7f52}
+  .zoomnote.show{display:block}
 
-  /* vis-timeline dark theme */
-  .vis-timeline{border:none;font-size:12.5px}
+  /* vis-timeline — tema atlas antiguo */
+  .vis-timeline{border:none;font-family:"EB Garamond",Georgia,serif;font-size:14px}
   .vis-panel.vis-center,.vis-panel.vis-left,.vis-panel.vis-right,
   .vis-panel.vis-top,.vis-panel.vis-bottom{border-color:var(--line)}
-  .vis-time-axis .vis-grid.vis-minor{border-color:#212b42}
-  .vis-time-axis .vis-grid.vis-major{border-color:#33405f}
+  .vis-time-axis .vis-grid.vis-minor{border-color:#d9c9a3}
+  .vis-time-axis .vis-grid.vis-major{border-color:#c2ab7f}
   .vis-time-axis .vis-text{color:var(--muted)}
-  .vis-time-axis .vis-text.vis-major{color:var(--ink);font-weight:600}
-  .vis-item{border:none;color:var(--ink);font-weight:600;background:transparent}
+  .vis-time-axis .vis-text.vis-major{color:var(--ink2);font-weight:600;
+       font-family:"Cinzel",serif;font-size:12px;letter-spacing:.5px}
+  .vis-item{border:none;color:var(--ink);font-weight:500;background:transparent}
   .vis-item.vis-point .vis-dot{border-color:var(--accent);background:var(--accent);
        border-width:6px;border-radius:50%}
-  .vis-item.vis-point.vis-selected .vis-dot{border-color:#fff;background:#fff}
-  .vis-item.vis-selected{box-shadow:none;color:#fff}
+  .vis-item.vis-point.vis-selected .vis-dot{border-color:var(--gold);background:var(--gold)}
+  .vis-item.vis-selected{box-shadow:none;color:var(--ink2);background:rgba(168,121,44,.22)!important;
+       border-radius:3px}
   .vis-item .vis-item-content{padding:2px 6px}
   .vis-item a{color:inherit;text-decoration:none}
-  .vis-item a:hover{text-decoration:underline}
-  .vis-tooltip{background:#0b1120;color:#e8ecf5;border:1px solid var(--line);
-       border-radius:8px;padding:9px 11px;font-size:12.5px;max-width:320px;box-shadow:0 8px 24px rgba(0,0,0,.5)}
-  .hint{color:var(--muted);font-size:12px;padding:0 26px 18px}
+  .vis-item a:hover{text-decoration:underline;text-decoration-color:var(--gold)}
+  .vis-tooltip{background:#33261a !important;color:#f3ead2 !important;border:1px solid var(--gold) !important;
+       border-radius:3px;padding:9px 12px;font-family:"EB Garamond",Georgia,serif !important;font-size:13.5px !important;
+       max-width:320px;box-shadow:0 8px 24px rgba(50,35,15,.5)}
+  .hint{color:var(--muted);font-size:13px;font-style:italic;text-align:center;padding:0 26px 22px}
   a.link{color:var(--accent)}
+
+  /* mapa — cartografía antigua */
+  .maptitle{padding:6px 26px 4px;color:var(--ink2);font-family:"Cinzel",serif;font-size:19px;
+       font-weight:600;letter-spacing:1px;text-align:center}
+  .mapsub{padding:0 26px 12px;color:var(--muted);font-size:14px;font-style:italic;
+       text-align:center;max-width:780px;margin:0 auto;line-height:1.5}
+  #mapwrap{margin:0 22px 30px;border:1px solid var(--line2);border-radius:2px;overflow:hidden;
+       background:#e9dcbb;position:relative;
+       box-shadow:0 0 0 4px #e9dcbb,0 0 0 5px var(--line2),0 8px 26px rgba(80,55,25,.22)}
+  #map{display:block;width:100%;height:auto}
+  #map .sea{fill:#e2d2a8}
+  #map .land{fill:#cdb387;stroke:#9a7f52;stroke-width:.6px}
+  #map .graticule{fill:none;stroke:#9a7f52;stroke-width:.4px;opacity:.35}
+  #map .allpt{fill:#6f5836;opacity:.5;cursor:pointer;transition:fill .12s,opacity .12s}
+  #map .allpt:hover{fill:var(--accent);opacity:1}
+  #map .hi-ring{fill:none;stroke:var(--accent);stroke-width:2.5px;opacity:0}
+  #map .hi-dot{fill:var(--accent);stroke:#f7eed6;stroke-width:1.5px;opacity:0}
+  #map.active .hi-ring{opacity:.9;animation:pulse 1.4s ease-out infinite}
+  #map.active .hi-dot{opacity:1}
+  @keyframes pulse{0%{r:6px;opacity:.9}70%{r:26px;opacity:0}100%{r:26px;opacity:0}}
+  #map .rose-ring{fill:none;stroke:var(--gold);stroke-width:1}
+  #map .rose-pt{fill:#7a5a2e}
+  #map .rose-n{fill:#5c4620;font-family:"Cinzel",serif;font-size:12px;font-weight:600}
+  #maplabel{position:absolute;pointer-events:none;background:#33261a;color:#f3ead2;
+       border:1px solid var(--gold);border-radius:3px;padding:6px 10px;font-size:13px;
+       font-family:"EB Garamond",Georgia,serif;
+       max-width:240px;box-shadow:0 8px 24px rgba(50,35,15,.5);opacity:0;transform:translate(-50%,-125%);
+       transition:opacity .12s;white-space:nowrap}
+  #maplabel b{color:#e8b866}
+
+  /* ---- mobile ---- */
+  @media (max-width:640px){
+    body{font-size:15px}
+    header{padding:20px 16px 4px}
+    h1{font-size:21px;letter-spacing:.8px;line-height:1.25}
+    .sub{font-size:14px;margin-top:8px}
+    header::after{font-size:18px;margin-top:8px}
+    .bar{padding:6px 14px 12px;gap:6px}
+    .bar input{min-width:0;flex:1 1 100%;max-width:none;font-size:16px}  /* 16px evita zoom en iOS */
+    .bar button{flex:1 1 auto;padding:9px 10px;font-size:13px}
+    .legend{font-size:12.5px;gap:8px;padding:0 16px 10px}
+    #tlwrap{margin:0 12px 20px}
+    #tl{box-shadow:0 0 0 2px var(--panel),0 0 0 3px var(--line2),0 5px 16px rgba(80,55,25,.2)}
+    .zoomnote{font-size:12.5px;padding:6px 10px}
+    .hint{font-size:12px;padding:0 16px 18px}
+    .maptitle{font-size:16px;padding-top:2px}
+    .mapsub{font-size:13px;padding:0 16px 10px}
+    #mapwrap{margin:0 12px 24px;box-shadow:0 0 0 2px #e9dcbb,0 0 0 3px var(--line2),0 5px 16px rgba(80,55,25,.2)}
+    #maplabel{font-size:12px;padding:5px 8px;max-width:180px}
+  }
+  @media (max-width:640px){
+    .vis-timeline{font-size:13px}
+    .vis-item.vis-point .vis-dot{border-width:5px}
+  }
 </style>
 </head>
 <body>
@@ -66,8 +153,18 @@
   <span><span class="dot" style="background:var(--accent);border-radius:50%"></span>Cada punto es un episodio, ubicado por su año de comienzo</span>
   <span id="count"></span>
 </div>
-<div id="tl"></div>
+<div id="tlwrap">
+  <div id="tl"></div>
+  <div class="zoomnote" id="zoomnote">▾ Hay más episodios apilados en este punto — hacé más zoom para verlos</div>
+</div>
 <p class="hint">Rueda del mouse o trackpad para hacer zoom · arrastrá para desplazarte en el tiempo.</p>
+
+<div class="maptitle">¿Dónde ocurrió?</div>
+<p class="mapsub">Pasá el mouse por un episodio de la línea del tiempo y se resaltará en el mapa dónde ocurrió. Y al revés: tocá un punto del mapa y se resaltarán en la línea del tiempo los episodios de ese lugar.</p>
+<div id="mapwrap">
+  <svg id="map" viewBox="0 0 1000 500" preserveAspectRatio="xMidYMid meet"></svg>
+  <div id="maplabel"></div>
+</div>
 
 <script>
 const RAW = [{"evento": "Rusia antigua (Rus de Kiev)", "nota": "Rusia antigua: un océano terrestre, gigante y vulnerable a la vez", "url": "https://delsol.uy/notoquennada/quirici/rusia-antigua-un-oceano-terrestre-gigante-y-vulnerable-a-la-vez", "start": "0882-01-01", "end": "", "id": 1}, {"evento": "Notre Dame y el gótico", "nota": "Notre Dame y el gótico: el vínculo entre la arquitectura y la espiritualidad", "url": "https://delsol.uy/notoquennada/quirici/notre-dame-y-el-gotico-el-vinculo-entre-la-arquitectura-y-la-espiritualidad", "start": "1163-01-01", "end": "1345-01-01", "id": 2}, {"evento": "Llegada de Colón a América (12 de octubre de 1492)", "nota": "12 de octubre y su significación histórica: sin dudas un viaje que cambió la historia", "url": "https://delsol.uy/notoquennada/quirici/12-de-octubre-y-su-significacion-historica-sin-dudas-un-viaje-que-cambio-la-historia", "start": "1492-10-12", "end": "", "id": 3}, {"evento": "Malinche", "nota": "Mujeres indígenas, Malinche y feminismo comunitario", "url": "https://delsol.uy/notoquennada/quirici/mujeres-indigenas-malinche-y-feminismo-comunitario", "start": "1500-01-01", "end": "", "id": 4}, {"evento": "Banda oriental 1500-1780", "nota": "Historias del Uruguay, dónde fuimos a parar - Capítulo I", "url": "https://delsol.uy/notoquennada/quirici/historias-del-uruguay-donde-fuimos-a-parar--capitulo-i", "start": "1500-01-01", "end": "1780-12-31", "id": 5}, {"evento": "Reforma Protestante", "nota": "Los 500 años de la Reforma Protestante", "url": "https://delsol.uy/notoquennada/quirici/los-500-anos-de-la-reforma-protestante", "start": "1517-10-31", "end": "", "id": 6}, {"evento": "Primera vuelta al mundo (Magallanes-Elcano)", "nota": "Magallanes y los doscientos tipos que se la jugaron a dar vuelta el mundo", "url": "https://delsol.uy/notoquennada/quirici/magallanes-y-los-doscientos-tipos-que-se-la-jugaron-a-dar-vuelta-el-mundo", "start": "1519-09-20", "end": "1522-09-06", "id": 7}, {"evento": "Absolutismo zarista ruso (de Iván IV a Catalina II)", "nota": "Rusia y su absolutismo: Iván lo forjó, Pedro lo modernizó y Catalina lo consolidó", "url": "https://delsol.uy/notoquennada/quirici/rusia-y-su-absolutismo-ivan-lo-forjo-pedro-lo-modernizo-y-catalina-lo-consolido", "start": "1547-01-16", "end": "1796-11-17", "id": 8}, {"evento": "Hernandarias", "nota": "Hernandarias: el primer rioplatense", "url": "https://delsol.uy/notoquennada/quirici/hernandarias-el-primer-rioplatense", "start": "1561-01-01", "end": "1634-01-01", "id": 9}, {"evento": "Quilombos (Palmares)", "nota": "Quilombos americanos", "url": "https://delsol.uy/notoquennada/quirici/quilombos-americanos", "start": "1605-01-01", "end": "1694-11-20", "id": 10}, {"evento": "Misiones jesuíticas guaraníes", "nota": "Misiones jesuíticas: entre la apología, la detracción y el olvido", "url": "https://delsol.uy/notoquennada/quirici/misiones-jesuiticas-entre-la-apologia-la-detraccion-y-el-olvido", "start": "1609-01-01", "end": "1768-01-01", "id": 11}, {"evento": "Inicio del zarismo Romanov", "nota": "Miguelito, Pedro y Catalina: el inicio del zarismo en Rusia", "url": "https://delsol.uy/notoquennada/quirici/miguelito-pedro-y-catalina-el-inicio-del-zarismo-en-rusia", "start": "1613-02-21", "end": "1796-11-17", "id": 12}, {"evento": "Sendoku Japonesa", "nota": "Pinceladas ancestrales de Japón", "url": "https://delsol.uy/notoquennada/quirici/pinceladas-ancestrales-de-japon", "start": "1639-01-01", "end": "1853-07-08", "id": 13}, {"evento": "Montevideo colonial y los minuanes", "nota": "Montevideo una agrociudad entre los Minuanes más allá de las murallas", "url": "https://delsol.uy/notoquennada/quirici/montevideo-una-agrociudad-entre-los-minuanes-mas-alla-de-las-murallas", "start": "1724-01-01", "end": "", "id": 14}, {"evento": "Historia de Montevideo", "nota": "Montevideo, tres siglos de historia para seguir conociendo", "url": "https://delsol.uy/notoquennada/quirici/montevideo-tres-siglos-de-historia-para-seguir-conociendo", "start": "1724-01-01", "end": "", "id": 15}, {"evento": "Fundación de Montevideo", "nota": "Montevideo en retazos fotográficos", "url": "https://delsol.uy/notoquennada/quirici/montevideo-en-retazos-fotograficos", "start": "1724-12-24", "end": "", "id": 16}, {"evento": "José Artigas", "nota": "El rostro científico de Artigas", "url": "https://delsol.uy/notoquennada/quirici/el-rostro-cientifico-de-artigas", "start": "1764-06-19", "end": "1850-09-23", "id": 17}, {"evento": "José Artigas", "nota": "Artigas 3D: imágenes, leyenda y biografía", "url": "https://delsol.uy/notoquennada/quirici/artigas-3d-imagenes-leyenda-y-biografia", "start": "1764-06-19", "end": "1850-09-23", "id": 18}, {"evento": "Jacinto Ventura de Molina", "nota": "Las identidades africanas y la historia de Jacinto Ventura", "url": "https://delsol.uy/notoquennada/quirici/las-identidades-africanas-y-la-historia-de-jacinto-ventura", "start": "1766-01-01", "end": "1841-01-01", "id": 19}, {"evento": "Independencia de Estados Unidos (Declaración)", "nota": "4 de Julio, a 250 años de la primera revolución liberal y anticolonial exitosa", "url": "https://delsol.uy/notoquennada/quirici/4-de-julio-a-250-anos-de-la-primera-revolucion-liberal-y-anticolonial-exitosa", "start": "1776-07-04", "end": "", "id": 20}, {"evento": "Independencia de Estados Unidos", "nota": "EEUU: el imperio hijo de la primera revolución anticolonial de la época moderna", "url": "https://delsol.uy/notoquennada/quirici/eeuu-el-imperio-hijo-de-la-primera-revolucion-anticolonial-de-la-epoca-moderna", "start": "1776-07-04", "end": "", "id": 21}, {"evento": "José de San Martín", "nota": "Un duelo histórico de libertadores", "url": "https://delsol.uy/notoquennada/quirici/un-duelo-historico-de-libertadores", "start": "1778-02-25", "end": "1850-08-17", "id": 22}, {"evento": "José de San Martín", "nota": "“Antes muertos que esclavos de los maturrangos”", "url": "https://delsol.uy/notoquennada/quirici/antes-muertos-que-esclavos-de-los-maturrangos", "start": "1778-02-25", "end": "1850-08-17", "id": 23}, {"evento": "José de San Martín", "nota": "San Martín: el militar y el político ilustrado", "url": "https://delsol.uy/notoquennada/quirici/san-martin-el-militar-y-el-politico-ilustrado", "start": "1778-02-25", "end": "1850-08-17", "id": 24}, {"evento": "Banda oriental 1780-1810", "nota": "La colonia bárbara: una casa en movimiento", "url": "https://delsol.uy/notoquennada/quirici/la-colonia-barbara-una-casa-en-movimiento", "start": "1780-01-01", "end": "1810-12-31", "id": 25}, {"evento": "Simón Bolívar", "nota": "Bolívar: el libertador definitivo y su proyecto inconcluso", "url": "https://delsol.uy/notoquennada/quirici/bolivar-el-libertador-definitivo-y-su-proyecto-inconcluso", "start": "1783-07-24", "end": "1830-12-17", "id": 26}, {"evento": "Juan Antonio Lavalleja", "nota": "Lavalleja, un vencedor vencido", "url": "https://delsol.uy/notoquennada/quirici/lavalleja-un-vencedor-vencido", "start": "1784-06-24", "end": "1853-10-22", "id": 27}, {"evento": "Revolución Francesa (Toma de la Bastilla)", "nota": "La revolución que se fue de las manos: Francia y el 14 de julio", "url": "https://delsol.uy/notoquennada/quirici/la-revolucion-que-se-fue-de-las-manos-francia-y-el-14-de-julio", "start": "1789-07-14", "end": "", "id": 28}, {"evento": "Revolución Francesa (nacimiento de izquierda y derecha)", "nota": "El nacimiento de la derecha y la izquierda en la república radical francesa", "url": "https://delsol.uy/notoquennada/quirici/el-nacimiento-de-la-derecha-y-la-izquierda-en-la-republica-radical-francesa", "start": "1789-08-28", "end": "", "id": 29}, {"evento": "Napoleón Bonaparte (Primer Imperio)", "nota": "Napoleón, la revolución a caballo y con corona", "url": "https://delsol.uy/notoquennada/quirici/napoleon-la-revolucion-a-caballo-y-con-corona", "start": "1804-12-02", "end": "1815-06-18", "id": 30}, {"evento": "Campaña de vacunación contra la viruela", "nota": "Los niños, la viruela y una campaña de vacunación hace 200 años", "url": "https://delsol.uy/notoquennada/quirici/los-ninos-la-viruela-y-una-campana-de-vacunacion-hace-200-anos", "start": "1805-01-01", "end": "", "id": 31}, {"evento": "Vida política de Montevideo, 1810-1830", "nota": "La vida política de Montevideo 1810-1830: elite y sectores populares", "url": "https://delsol.uy/notoquennada/quirici/la-vida-politica-de-montevideo-1810-1830-elite-y-sectores-populares", "start": "1810-01-01", "end": "1830-12-31", "id": 32}, {"evento": "Antecedentes de la Revolución Oriental", "nota": "Los antecedentes de la revolución", "url": "https://delsol.uy/notoquennada/quirici/los-antecedentes-de-la-revolucion", "start": "1810-01-01", "end": "", "id": 33}, {"evento": "Revolución oriental artiguista (Grito de Asencio)", "nota": "Una revolución federal, rural y alocada", "url": "https://delsol.uy/notoquennada/quirici/una-revolucion-federal-rural-y-alocada", "start": "1811-02-28", "end": "", "id": 34}, {"evento": "Batalla de Las Piedras", "nota": "Otra mirada a la Batalla de Las Piedras", "url": "https://delsol.uy/notoquennada/quirici/otra-mirada-a-la-batalla-de-las-piedras", "start": "1811-05-18", "end": "", "id": 35}, {"evento": "Independencia de Venezuela", "nota": "La frágil democracia venezolana: caudillos, desigualdad y petróleo", "url": "https://delsol.uy/notoquennada/quirici/la-fragil-democracia-venezolana-caudillos-desigualdad-y-petroleo", "start": "1811-07-05", "end": "", "id": 36}, {"evento": "Exodo del pueblo oriental (uruguay)", "nota": "¿Viejo terco o héroe traicionado?", "url": "https://delsol.uy/notoquennada/quirici/viejo-terco-o-heroe-traicionado", "start": "1811-10-23", "end": "1812-01-01", "id": 37}, {"evento": "Instrucciones del Año XIII", "nota": "Lo nacional sobre lo político-social y el feriado de Las Instrucciones del Año XIII", "url": "https://delsol.uy/notoquennada/quirici/lo-nacional-sobre-lo-politico-social-y-el-feriado-de-las-instrucciones-del-ano-xiii", "start": "1813-04-05", "end": "", "id": 38}, {"evento": "Artigas en el poder (Patria Vieja)", "nota": "Cuando Artigas mandó", "url": "https://delsol.uy/notoquennada/quirici/cuando-artigas-mando", "start": "1815-01-01", "end": "1820-01-01", "id": 39}, {"evento": "Viaje de Dámaso Larrañaga a Paysandú", "nota": "El viaje de Dámaso Larrañaga a Paysandú: una obra de ciencia comprometida", "url": "https://delsol.uy/notoquennada/quirici/el-viaje-de-damaso-larranaga-a-paysandu-una-obra-de-ciencia-comprometida", "start": "1815-05-01", "end": "", "id": 40}, {"evento": "Karl Marx", "nota": "Marx: un ateo burgués con pedigree judeo cristiano", "url": "https://delsol.uy/notoquennada/quirici/marx-un-ateo-burgues-con-pedigree-judeo-cristiano", "start": "1818-05-05", "end": "1883-03-14", "id": 41}, {"evento": "Independencia del Perú", "nota": "¿Bicentenario del Perú o de América?", "url": "https://delsol.uy/notoquennada/quirici/bicentenario-del-peru-o-de-america", "start": "1821-07-28", "end": "", "id": 42}, {"evento": "Independencia del Perú", "nota": "Apuntes para una historia de la política en Perú", "url": "https://delsol.uy/notoquennada/quirici/apuntes-para-una-historia-de-la-politica-en-peru", "start": "1821-07-28", "end": "", "id": 43}, {"evento": "Independencia de Brasil", "nota": "“A maior” derecha del continente", "url": "https://delsol.uy/notoquennada/quirici/a-maior-derecha-del-continente", "start": "1822-09-07", "end": "", "id": 44}, {"evento": "Logia de los Caballeros Orientales", "nota": "La Logia de los Caballeros Orientales", "url": "https://delsol.uy/notoquennada/quirici/la-logia-de-los-caballeros-orientales", "start": "1823-01-01", "end": "", "id": 45}, {"evento": "República Federal de Centroamérica", "nota": "A 200 años de la República Federal de Centroamérica", "url": "https://delsol.uy/notoquennada/quirici/a-200-anos-de-la-republica-federal-de-centroamerica", "start": "1823-07-01", "end": "1841-01-01", "id": 46}, {"evento": "Declaratoria de la Independencia (25 de agosto de 1825)", "nota": "La construcción de la independencia el 25 de agosto", "url": "https://delsol.uy/notoquennada/quirici/la-construccion-de-la-independencia-el-25-de-agosto", "start": "1825-08-25", "end": "", "id": 47}, {"evento": "Independencia de Uruguay 1825", "nota": "Una trivia sobre la independencia", "url": "https://delsol.uy/notoquennada/quirici/una-trivia-sobre-la-independencia", "start": "1825-08-25", "end": "", "id": 48}, {"evento": "Independencia de Uruguay 1825", "nota": "Orientalito: la independencia contada para niños", "url": "https://delsol.uy/notoquennada/quirici/orientalito-la-independencia-contada-para-ninos", "start": "1825-08-25", "end": "", "id": 49}, {"evento": "Convención Preliminar de Paz", "nota": "¿Por qué la Convención Preliminar de Paz no integra nuestros feriados patrios?", "url": "https://delsol.uy/notoquennada/quirici/por-que-la-convencion-preliminar-de-paz-no-integra-nuestros-feriados-patrios", "start": "1828-08-27", "end": "", "id": 50}, {"evento": "Convención Preliminar de Paz", "nota": "Convención Preliminar de Paz: ¿independencia o nacimiento de un estado tapón a la inglesa?", "url": "https://delsol.uy/notoquennada/quirici/convencion-preliminar-de-paz-independencia-o-nacimiento-de-un-estado-tapon-a-la-inglesa", "start": "1828-08-27", "end": "", "id": 51}, {"evento": "Creación del Estado Oriental", "nota": "Egos locales entre bayanos, porteños y británicos: la creación del estado oriental", "url": "https://delsol.uy/notoquennada/quirici/egos-locales-entre-bayanos-portenos-y-britanicos-la-creacion-del-estado-oriental", "start": "1828-08-27", "end": "1830-07-18", "id": 52}, {"evento": "1830-1850 Perido en uruguay", "nota": "Juego de monturas: inicios del Uruguay criollo", "url": "https://delsol.uy/notoquennada/quirici/juego-de-monturas-inicios-del-uruguay-criollo", "start": "1830-01-01", "end": "1850-12-31", "id": 53}, {"evento": "Juan Manuel Blanes", "nota": "Blanes y la construcción de un Artigas creíble", "url": "https://delsol.uy/notoquennada/quirici/blanes-y-la-construccion-de-un-artigas-creible", "start": "1830-06-08", "end": "1901-04-15", "id": 54}, {"evento": "Constitución de 1830 (Uruguay)", "nota": "La Constitución de 1830: ¿de patricios para patricios?", "url": "https://delsol.uy/notoquennada/quirici/la-constitucion-de-1830-de-patricios-para-patricios", "start": "1830-07-18", "end": "", "id": 55}, {"evento": "Jura de la Constitución de Uruguay 1830", "nota": "Las respuestas a la trivia de Quirici sobre la Constitución", "url": "https://delsol.uy/notoquennada/quirici/las-respuestas-a-la-trivia-de-quirici-sobre-la-constitucion", "start": "1830-07-18", "end": "", "id": 56}, {"evento": "Matanza de Salsipuedes (Uruguay)", "nota": "Estatuas y derribos en Uruguay: el foco en Rivera", "url": "https://delsol.uy/notoquennada/quirici/estatuas-y-derribos-en-uruguay-el-foco-en-rivera", "start": "1831-04-11", "end": "", "id": 57}, {"evento": "Guerra Grande (Uruguay)", "nota": "Gringos, legionarios y comunistas… nuevas historias de la Guerra Grande", "url": "https://delsol.uy/notoquennada/quirici/gringos-legionarios-y-comunistas…-nuevas-historias-de-la-guerra-grande", "start": "1839-01-01", "end": "1851-10-08", "id": 58}, {"evento": "Guerra Grande (Uruguay)", "nota": "“Muera la Santa Federación”, juego de monturas internacional: la Guerra Grande", "url": "https://delsol.uy/notoquennada/quirici/muera-la-santa-federacion-juego-de-monturas-internacional-la-guerra-grande", "start": "1839-01-01", "end": "1851-10-08", "id": 59}, {"evento": "Fin de la Guerra Grande", "nota": "Historia del Uruguay, capítulo final: el desenlace de la Guerra Grande", "url": "https://delsol.uy/notoquennada/quirici/historia-del-uruguay-capitulo-final-el-desenlace-de-la-guerra-grande", "start": "1851-01-01", "end": "1851-10-08", "id": 60}, {"evento": "Uruguay tras la Guerra Grande", "nota": "La calesita del poder después de la Guerra Grande", "url": "https://delsol.uy/notoquennada/quirici/la-calesita-del-poder-despues-de-la-guerra-grande", "start": "1852-01-01", "end": "1865-01-01", "id": 61}, {"evento": "Epidemia de fiebre amarilla de 1857", "nota": "Fiebre amarilla 1857 y ¿similitudes con coronavirus 2020?", "url": "https://delsol.uy/notoquennada/quirici/fiebre-amarilla-1857-y-similitudes-con-coronavirus-2020", "start": "1857-01-01", "end": "1857-12-31", "id": 62}, {"evento": "Creacion del canal de Suez", "nota": "Canal de Suez: de los faraones a la primavera árabe", "url": "https://delsol.uy/notoquennada/quirici/canal-de-suez-de-los-faraones-a-la-primavera-arabe", "start": "1859-04-25", "end": "1869-11-17", "id": 63}, {"evento": "Presidencia de Berro en Uruguay", "nota": "Pereira y Berro: dos partidas de mártires al otro lado de la luna", "url": "https://delsol.uy/notoquennada/quirici/pereira-y-berro-dos-partidas-de-martires-al-otro-lado-de-la-luna", "start": "1860-03-01", "end": "1864-03-01", "id": 64}, {"evento": "Sitio de Paysandú", "nota": "De la Heroica Paysandú al día de los “cuchillos largos”", "url": "https://delsol.uy/notoquennada/quirici/de-la-heroica-paysandu-al-dia-de-los-cuchillos-largos", "start": "1864-12-03", "end": "1865-01-02", "id": 65}, {"evento": "Lenin", "nota": "Lenin, el versátil que no era “dogmático ni caprichoso”", "url": "https://delsol.uy/notoquennada/quirici/lenin-el-versatil-que-no-era-dogmatico-ni-caprichoso", "start": "1870-04-22", "end": "1924-01-21", "id": 66}, {"evento": "Carlos Vaz Ferreira", "nota": "Carlos Vaz Ferreira desde la historia", "url": "https://delsol.uy/notoquennada/quirici/carlos-vaz-ferreira-desde-la-historia", "start": "1872-10-15", "end": "1958-01-03", "id": 67}, {"evento": "Paulina Luisi y el feminismo uruguayo", "nota": "Las paradojas del feminismo y Paulina Luisi", "url": "https://delsol.uy/notoquennada/quirici/las-paradojas-del-feminismo-y-paulina-luisi", "start": "1875-09-22", "end": "1950-07-17", "id": 68}, {"evento": "Reforma vareliana (José Pedro Varela)", "nota": "Varela y la construcción la “escuela nueva”", "url": "https://delsol.uy/notoquennada/quirici/varela-y-la-construccion-la-escuela-nueva", "start": "1876-01-01", "end": "", "id": 69}, {"evento": "Militarismo (Lorenzo Latorre)", "nota": "Latorre, el militarismo y el capitalismo agrario", "url": "https://delsol.uy/notoquennada/quirici/latorre-el-militarismo-y-el-capitalismo-agrario", "start": "1876-03-10", "end": "1880-03-15", "id": 70}, {"evento": "Sylvia Pankhurst", "nota": "Sylvia Pankhurst, una mujer pluriversal o “born to be revel”", "url": "https://delsol.uy/notoquennada/quirici/sylvia-pankhurst-una-mujer-pluriversal-o-born-to-be-revel", "start": "1882-05-05", "end": "1960-09-27", "id": 71}, {"evento": "Fin del militarismo en Uruguay", "nota": "El fin del militarismo, el Uruguay moderno y la forja del siglo XX", "url": "https://delsol.uy/notoquennada/quirici/el-fin-del-militarismo-el-uruguay-moderno-y-la-forja-del-siglo-xx-1", "start": "1886-01-01", "end": "", "id": 72}, {"evento": "Día Internacional de los Trabajadores (1º de Mayo)", "nota": "El 1º de Mayo como celebración, fiesta del trabajo y “buena nueva” del proletariado", "url": "https://delsol.uy/notoquennada/quirici/el-1º-de-mayo-como-celebracion-fiesta-del-trabajo-y-buena-nueva-del-proletariado", "start": "1886-05-01", "end": "", "id": 73}, {"evento": "Fundación de Piriapolis (uruguay)", "nota": "Turismo en Uruguay,  el nacimiento de un nuevo sector a escala nacional", "url": "https://delsol.uy/notoquennada/quirici/turismo-en-uruguay--el-nacimiento-de-un-nuevo-sector-a-escala-nacional", "start": "1890-01-01", "end": "", "id": 74}, {"evento": "Crisis de 1890 en Uruguay", "nota": "El primer Aparicio, el primer Batlle y la primera crisis financiera", "url": "https://delsol.uy/notoquennada/quirici/el-primer-aparicio-el-primer-batlle-y-la-primera-crisis-financiera", "start": "1890-01-01", "end": "1890-12-31", "id": 75}, {"evento": "Fundación de Piriapolis (uruguay)", "nota": "San Turismo", "url": "https://delsol.uy/notoquennada/quirici/san-turismo", "start": "1890-01-01", "end": "", "id": 76}, {"evento": "Aparicio Saravia y la Revolución de 1897", "nota": "La irrupción de Aparicio Saravia en la escena política nacional", "url": "https://delsol.uy/notoquennada/quirici/la-irrupcion-de-aparicio-saravia-en-la-escena-politica-nacional", "start": "1897-03-01", "end": "1897-09-18", "id": 77}, {"evento": "Invación estadounidense de Puerto Rico", "nota": "Trazos de la historia de Puerto Rico que traspasa el spanglish", "url": "https://delsol.uy/notoquennada/quirici/trazos-de-la-historia-de-puerto-rico-que-traspasa-el-spanglish", "start": "1898-07-25", "end": "", "id": 78}, {"evento": "Fútbol uruguayo del Novecientos", "nota": "El fútbol del 900: los triunfos y el Estado de bienestar", "url": "https://delsol.uy/notoquennada/quirici/el-futbol-del-900-los-triunfos-y-el-estado-de-bienestar", "start": "1900-01-01", "end": "", "id": 79}, {"evento": "Higienismo en el Novecientos (Uruguay)", "nota": "La medicalización de la moral: apuntes sobre el higienismo en el 900", "url": "https://delsol.uy/notoquennada/quirici/la-medicalizacion-de-la-moral-apuntes-sobre-el-higienismo-en-el-900", "start": "1900-01-01", "end": "", "id": 80}, {"evento": "China: rebelión de los Bóxers (1900) y Tiananmen (1989)", "nota": "China: rebelión y masacre en los extremos del siglo XX", "url": "https://delsol.uy/notoquennada/quirici/china-rebelion-y-masacre-en-los-extremos-del-siglo-xx", "start": "1900-01-01", "end": "1989-06-04", "id": 81}, {"evento": "Orígenes del feminismo en el Río de la Plata", "nota": "El origen de los feminismos en el Río de la Plata", "url": "https://delsol.uy/notoquennada/quirici/el-origen-de-los-feminismos-en-el-rio-de-la-plata", "start": "1900-01-01", "end": "", "id": 82}, {"evento": "Batllismo", "nota": "Los tres partidos tradicionales y la disputa del batllismo", "url": "https://delsol.uy/notoquennada/quirici/los-tres-partidos-tradicionales-y-la-disputa-del-batllismo", "start": "1903-03-01", "end": "", "id": 83}, {"evento": "Batllismo", "nota": "La construcción del batllismo como corriente política: ¿reforma moral desde el poder?", "url": "https://delsol.uy/notoquennada/quirici/la-construccion-del-batllismo-como-corriente-politica-reforma-moral-desde-el-poder", "start": "1903-03-01", "end": "", "id": 84}, {"evento": "Batllismo", "nota": "El batllismo y sus frenos: tierra y constitución", "url": "https://delsol.uy/notoquennada/quirici/el-batllismo-y-sus-frenos-tierra-y-constitucio23232", "start": "1903-03-01", "end": "", "id": 85}, {"evento": "Batllismo (reformas)", "nota": "El Batllismo creador y sus reformas", "url": "https://delsol.uy/notoquennada/quirici/el-batllismo-creador-y-sus-reformas", "start": "1903-03-01", "end": "", "id": 86}, {"evento": "Batllismo (reformas)", "nota": "Cartas desde el asilo: las adolescentes que pedían ser “colocadas”", "url": "https://delsol.uy/notoquennada/quirici/cartas-desde-el-asilo-las-adolescentes-que-pedian-ser-colocadas", "start": "1903-03-01", "end": "", "id": 87}, {"evento": "Revolución de 1904 (Aparicio Saravia)", "nota": "El reclamo de elecciones libres no aparece en la proclama de Saravia", "url": "https://delsol.uy/notoquennada/quirici/el-reclamo-de-elecciones-libres-no-aparece-en-la-proclama-de-saravia", "start": "1904-01-01", "end": "1904-09-24", "id": 88}, {"evento": "Revolución de 1904 (Saravia vs. Batlle)", "nota": "La última guerra civil: el trono para Batlle y el poncho nube de Aparicio", "url": "https://delsol.uy/notoquennada/quirici/la-ultima-guerra-civil-el-trono-para-batlle-y-el-poncho-nube-de-aparicio", "start": "1904-01-01", "end": "1904-09-24", "id": 89}, {"evento": "Primera Guerra Mundial", "nota": "Oleada de hiperrealidad nacionalista de la gran guerra y el momento actual", "url": "https://delsol.uy/notoquennada/quirici/oleada-de-hiperrealidad-nacionalista-de-la-gran-guerra-y-el-momento-actual", "start": "1914-07-28", "end": "1918-11-11", "id": 90}, {"evento": "Rasputín y la caída del zarismo", "nota": "Los soviets y Rasputín, el monje loco", "url": "https://delsol.uy/notoquennada/quirici/los-soviets-y-rasputin-el-monje-loco", "start": "1916-01-01", "end": "1917-03-01", "id": 91}, {"evento": "Revolución de Febrero de 1917 (Rusia)", "nota": "En el principio no fueron los bolcheviques", "url": "https://delsol.uy/notoquennada/quirici/en-el-principio-no-fueron-los-bolcheviques", "start": "1917-03-08", "end": "", "id": 92}, {"evento": "Revolución Rusa (1917)", "nota": "La Revolución Rusa desafió a la izquierda, al marxismo y al capitalismo", "url": "https://delsol.uy/notoquennada/quirici/la-revolucion-rusa-desafio-a-la-izquierda-al-marxismo-y-al-capitalismo", "start": "1917-11-07", "end": "", "id": 93}, {"evento": "Revolución de Octubre (1917)", "nota": "Cuando los bolcheviques se quedaron con la revolución", "url": "https://delsol.uy/notoquennada/quirici/cuando-los-bolcheviques-se-quedaron-con-la-revolucion", "start": "1917-11-07", "end": "", "id": 94}, {"evento": "Revolución Rusa (1917)", "nota": "¿Era viable el socialismo en Rusia?", "url": "https://delsol.uy/notoquennada/quirici/era-viable-el-socialismo-en-rusia", "start": "1917-11-07", "end": "", "id": 95}, {"evento": "Gripe española en Uruguay", "nota": "Cómo fue la pandemia de gripe en Uruguay, 100 años antes del covid", "url": "https://delsol.uy/notoquennada/quirici/como-fue-la-pandemia-de-gripe-en-uruguay-100-anos-antes-del-covid", "start": "1918-01-01", "end": "1919-12-31", "id": 96}, {"evento": "Fin de la Primera Guerra Mundial / caída del Káiser", "nota": "100 años de la caída del Kaiser y del fin de una idea de Europa", "url": "https://delsol.uy/notoquennada/quirici/100-anos-de-la-caida-del-kaiser-y-del-fin-de-una-idea-de-europa", "start": "1918-11-09", "end": "", "id": 97}, {"evento": "Fascismo", "nota": "¿Qué características debería tener un totalitarismo?", "url": "https://delsol.uy/notoquennada/quirici/que-caracteristicas-deberia-tener-un-totalitarismo", "start": "1919-01-01", "end": "1945-01-01", "id": 98}, {"evento": "Fascismo", "nota": "El fascismo desprecia a los débiles y parla la neo-lengua", "url": "https://delsol.uy/notoquennada/quirici/el-fascismo-desprecia-a-los-debiles-y-parla-la-neo-lengua", "start": "1919-01-01", "end": "1945-01-01", "id": 99}, {"evento": "Fascismo", "nota": "Fascismo: hijos de la guerra, padres de la derecha radical plebeya", "url": "https://delsol.uy/notoquennada/quirici/fascismo-hijos-de-la-guerra-padres-de-la-derecha-radical-plebeya", "start": "1919-01-01", "end": "1945-01-01", "id": 100}, {"evento": "Bauhaus", "nota": "Qué era la Bauhaus y por qué importa aún hoy", "url": "https://delsol.uy/notoquennada/quirici/que-era-la-bauhaus-y-por-que-importa-aun-hoy", "start": "1919-04-01", "end": "1933-04-11", "id": 101}, {"evento": "Muerte de Emiliano Zapata", "nota": "“Miliano no murió”: a 100 años de la muerte de Zapata", "url": "https://delsol.uy/notoquennada/quirici/miliano-no-murio-a-100-anos-de-la-muerte-de-zapata", "start": "1919-04-10", "end": "", "id": 102}, {"evento": "Eva Perón", "nota": "Evita: razones de una vida", "url": "https://delsol.uy/notoquennada/quirici/evita-razones-de-una-vida", "start": "1919-05-07", "end": "1952-07-26", "id": 103}, {"evento": "Eva Perón", "nota": "Evita y el más allá", "url": "https://delsol.uy/notoquennada/quirici/evita-y-el-mas-alla", "start": "1919-05-07", "end": "1952-07-26", "id": 104}, {"evento": "Los años 20 en Uruguay", "nota": "Los años 20 en Uruguay: locos pero no tanto", "url": "https://delsol.uy/notoquennada/quirici/los-anos-20-en-uruguay-locos-pero-no-tanto-1", "start": "1920-01-01", "end": "1929-12-31", "id": 105}, {"evento": "Vivián Trías (centenario)", "nota": "Cien años de Vivian Trías: un sembrador", "url": "https://delsol.uy/notoquennada/quirici/cien-anos-de-vivian-trias-un-sembrador", "start": "1922-06-16", "end": "1980-11-14", "id": 106}, {"evento": "Marcha sobre Roma (Mussolini)", "nota": "100 años de la “Marcha sobre Roma” de los camisas negras", "url": "https://delsol.uy/notoquennada/quirici/100-anos-de-la-marcha-sobre-roma-de-los-camisas-negras", "start": "1922-10-28", "end": "1922-10-31", "id": 107}, {"evento": "Independencia de Irlanda", "nota": "Irlanda: un trébol de cuatro historias", "url": "https://delsol.uy/notoquennada/quirici/irlanda-un-trebol-de-cuatro-historias", "start": "1922-12-06", "end": "", "id": 108}, {"evento": "Unión Soviética (el siglo soviético)", "nota": "El siglo soviético: del brutal Stalin a “Miguelito” Gorbachov", "url": "https://delsol.uy/notoquennada/quirici/el-siglo-sovietico-del-brutal-stalin-a-miguelito-gorbachov", "start": "1922-12-30", "end": "1991-12-26", "id": 109}, {"evento": "Putsch de Múnich (golpe de la Cervecería)", "nota": "El “putsch de Münich” o el golpe de la Cervecería", "url": "https://delsol.uy/notoquennada/quirici/el-putsch-de-munich-o-el-golpe-de-la-cerveceria", "start": "1923-11-08", "end": "1923-11-09", "id": 110}, {"evento": "APRA y Haya de la Torre", "nota": "Víctor Haya de Latorre y la primera izquierda indoamericana", "url": "https://delsol.uy/notoquennada/quirici/victor-haya-de-latorre-y-la-primera-izquierda-indoamericana-1", "start": "1924-05-07", "end": "", "id": 111}, {"evento": "Uruguay campeón olímpico de fútbol (París 1924)", "nota": "1924, más cultura deportiva que garra", "url": "https://delsol.uy/notoquennada/quirici/1924-mas-cultura-deportiva-que-garra", "start": "1924-05-25", "end": "1924-06-09", "id": 112}, {"evento": "Ascenso de Herrera y último triunfo de Batlle", "nota": "El ascenso de Herrera y el último triunfo de Batlle", "url": "https://delsol.uy/notoquennada/quirici/el-ascenso-de-herrera-y-el-ultimo-triunfo-de-batlle", "start": "1925-01-01", "end": "1929-10-20", "id": 113}, {"evento": "Robert F. Kennedy", "nota": "Bobby Kennedy, el hermano que jugaba mejor", "url": "https://delsol.uy/notoquennada/quirici/bobby-kennedy-el-hermano-que-jugaba-mejor", "start": "1925-11-20", "end": "1968-06-06", "id": 114}, {"evento": "Martin Luther King", "nota": "La vida y las luchas de Martin Luther King", "url": "https://delsol.uy/notoquennada/quirici/la-vida-y-las-luchas-de-martin-luther-king", "start": "1929-01-15", "end": "1968-04-04", "id": 115}, {"evento": "1929: muerte de Batlle y crac de Wall Street", "nota": "Murió Batlle, cayó Wall Street y en Uruguay terminaba un modelo de país", "url": "https://delsol.uy/notoquennada/quirici/murio-batlle-cayo-wall-street-y-en-uruguay-terminaba-un-modelo-de-pais", "start": "1929-10-20", "end": "1929-10-29", "id": 116}, {"evento": "Alemania nazi", "nota": "El nazismo y las drogas: una relación mucho más intensa que conocida", "url": "https://delsol.uy/notoquennada/quirici/el-nazismo-y-las-drogas-una-relacion-mucho-mas-intensa-que-conocida", "start": "1933-01-30", "end": "1945-05-08", "id": 117}, {"evento": "Golpes de Estado en el Uruguay del siglo XX", "nota": "Golpe a golpe: los tres quiebres institucionales en el Uruguay del siglo XX", "url": "https://delsol.uy/notoquennada/quirici/golpe-a-golpe-los-tres-quiebres-institucionales-en-el-uruguay-del-siglo-xx", "start": "1933-03-31", "end": "1973-06-27", "id": 118}, {"evento": "Larga Marcha (Partido Comunista de China)", "nota": "La larga marcha del PCCH: ¿partido comunista campesino han?", "url": "https://delsol.uy/notoquennada/quirici/la-larga-marcha-del-pcch-partido-comunista-campesino-han", "start": "1934-10-16", "end": "1935-10-19", "id": 119}, {"evento": "Presidencia de Lázaro Cárdenas (México)", "nota": "México, Cárdenas y un partido que unió lo revolucionario y lo institucional", "url": "https://delsol.uy/notoquennada/quirici/mexico-cardenas-y-un-partido-que-unio-lo-revolucionario-y-lo-institucional", "start": "1934-12-01", "end": "1940-11-30", "id": 120}, {"evento": "Campo de concentración de Sachsenhausen", "nota": "Viaje a los restos del monstruo: el campo de concentración de Sachehausen", "url": "https://delsol.uy/notoquennada/quirici/viaje-a-los-restos-del-monstruo-el-campo-de-concentracion-de-sachehausen", "start": "1936-01-01", "end": "1945-04-22", "id": 121}, {"evento": "Bombardeo de Guernica", "nota": "80 años de los Gernika", "url": "https://delsol.uy/notoquennada/quirici/80-anos-de-los-gernika", "start": "1937-04-26", "end": "", "id": 122}, {"evento": "Fin de la República Española y Pacto germano-soviético (1939)", "nota": "La caída de la república española y el pacto URSS-Alemania", "url": "https://delsol.uy/notoquennada/quirici/la-caida-de-la-republica-espanola-y-el-pacto-urss-alemania", "start": "1939-04-01", "end": "1939-08-23", "id": 123}, {"evento": "Segunda Guerra Mundial (memoria)", "nota": "Memorias de la resistencia: los museos de Europa sobre la Segunda Guerra Mundial", "url": "https://delsol.uy/notoquennada/quirici/memorias-de-la-resistencia-los-museos-de-europa-sobre-la-segunda-guerra-mundial", "start": "1939-09-01", "end": "1945-09-02", "id": 124}, {"evento": "Levantamiento del Gueto de Varsovia", "nota": "A 80 de años del alzamiento del Gueto de Varsovia", "url": "https://delsol.uy/notoquennada/quirici/a-80-de-anos-del-alzamiento-del-gueto-de-varsovia", "start": "1943-04-19", "end": "1943-05-16", "id": 125}, {"evento": "Día D (desembarco de Normandía)", "nota": "“Día D”, cuando los “americanos” liberaron Europa occidental del nazismo", "url": "https://delsol.uy/notoquennada/quirici/dia-d-cuando-los-americanos-liberaron-europa-occidental-del-nazismo", "start": "1944-06-06", "end": "", "id": 126}, {"evento": "Yugoslavia de Tito", "nota": "Yugoslavia: el comunismo autónomo de Tito", "url": "https://delsol.uy/notoquennada/quirici/yugoslavia-el-comunismo-autonomo-de-tito", "start": "1945-01-01", "end": "1980-05-04", "id": 127}, {"evento": "Partición de la India", "nota": "A 75 años de la partición de la India", "url": "https://delsol.uy/notoquennada/quirici/a-75-anos-de-la-particion-de-la-india", "start": "1947-08-15", "end": "", "id": 128}, {"evento": "Plan Marshall", "nota": "El Plan Marshall como base de la Unión Europea", "url": "https://delsol.uy/notoquennada/quirici/el-plan-marshall-como-base-de-la-union-europea", "start": "1948-04-03", "end": "1952-01-01", "id": 129}, {"evento": "Conflicto China-Taiwán", "nota": "Taiwán, la isla de la discordia", "url": "https://delsol.uy/notoquennada/quirici/taiwan-la-isla-de-la-discordia", "start": "1949-01-01", "end": "", "id": 130}, {"evento": "Gobierno de Mao en China", "nota": "China y el mundo frío", "url": "https://delsol.uy/notoquennada/quirici/china-y-el-mundo-frio", "start": "1949-10-01", "end": "1976-09-09", "id": 131}, {"evento": "Golpe de Estado en Guatemala (1954)", "nota": "Guatemala: el “presidente uruguayo” y el primer golpe de la Guerra Fría en América Latina", "url": "https://delsol.uy/notoquennada/quirici/guatemala-el-presidente-uruguayo-y-el-primer-golpe-de-la-guerra-fria-en-america-latina", "start": "1954-06-18", "end": "1954-06-27", "id": 132}, {"evento": "Revolución húngara de 1956 (Imre Nagy)", "nota": "Nagy y la revolución húngara frustrada", "url": "https://delsol.uy/notoquennada/quirici/nagy-y-la-revolucion-hungara-frustrada", "start": "1956-10-23", "end": "1956-11-10", "id": 133}, {"evento": "Independencia de Ghana (Kwame Nkrumah)", "nota": "Ghana: la historia del primer país independiente de África y de su líder Nkrumáh", "url": "https://delsol.uy/notoquennada/quirici/ghana-la-historia-del-primer-pais-independiente-de-africa-y-de-su-lider-nkrumah", "start": "1957-03-06", "end": "", "id": 134}, {"evento": "Crisis de los Misiles de Cuba", "nota": "Los ecos uruguayos de la Crisis de los Misiles, el clímax de la Guerra Fría", "url": "https://delsol.uy/notoquennada/quirici/los-ecos-uruguayos-de-la-crisis-de-los-misiles-el-climax-de-la-guerra-fria", "start": "1962-10-16", "end": "1962-10-28", "id": 135}, {"evento": "Dictadura militar de Brasil", "nota": "La dictadura en Brasil y la percepción “favorable” de los jóvenes", "url": "https://delsol.uy/notoquennada/quirici/la-dictadura-en-brasil-y-la-percepcion-favorable-de-los-jovenes", "start": "1964-04-01", "end": "1985-03-15", "id": 136}, {"evento": "Pachequismo (Pacheco Areco)", "nota": "50 años del pachequismo: al poder por azar desde el poder sin dudar", "url": "https://delsol.uy/notoquennada/quirici/50-anos-del-pachequismo-al-poder-por-azar-desde-el-poder-sin-dudar", "start": "1967-12-06", "end": "1972-03-01", "id": 137}, {"evento": "1968 en Uruguay", "nota": "1968: Uruguay intenso y frente al abismo", "url": "https://delsol.uy/notoquennada/quirici/1968-uruguay-intenso-y-frente-al-abismo", "start": "1968-01-01", "end": "1968-12-31", "id": 138}, {"evento": "Mayo del 68 francés", "nota": "El mayo francés: la inmadura revolución del crecimiento", "url": "https://delsol.uy/notoquennada/quirici/el-mayo-frances-la-inmadura-revolucion-del-crecimiento", "start": "1968-05-02", "end": "1968-06-30", "id": 139}, {"evento": "Masacre de Tlatelolco", "nota": "México: masacre en la Plaza de las Tres Culturas", "url": "https://delsol.uy/notoquennada/quirici/mexico-masacre-en-la-plaza-de-las-tres-culturas", "start": "1968-10-02", "end": "", "id": 140}, {"evento": "\"Nuestro compromiso con Usted\" (Wilson Ferreira, 1971)", "nota": "A 50 años de “Nuestro compromiso con Usted”", "url": "https://delsol.uy/notoquennada/quirici/a-50-anos-de-nuestro-compromiso-con-usted", "start": "1971-01-01", "end": "", "id": 141}, {"evento": "Fundación del Frente Amplio", "nota": "Medio siglo del FA, sin Tabaré: un perfil del monte a la uruguaya", "url": "https://delsol.uy/notoquennada/quirici/medio-siglo-del-fa-sin-tabare-un-perfil-del-monte-a-la-uruguaya", "start": "1971-02-05", "end": "", "id": 142}, {"evento": "Domingo Sangriento (Derry, Irlanda del Norte)", "nota": "A 50 años del “domingo sangriento” en Irlanda", "url": "https://delsol.uy/notoquennada/quirici/a-50-anos-del-domingo-sangriento-en-irlanda", "start": "1972-01-30", "end": "", "id": 143}, {"evento": "Abril de 1972 (estado de guerra interno, Uruguay)", "nota": "Abril del 72, de paz y de guerra", "url": "https://delsol.uy/notoquennada/quirici/abril-del-72-de-paz-y-de-guerra", "start": "1972-04-14", "end": "", "id": 144}, {"evento": "Escándalo Watergate y caída de Nixon", "nota": "La caída de Nixon, mucho más que Watergate", "url": "https://delsol.uy/notoquennada/quirici/la-caida-de-nixon-mucho-mas-que-watergate", "start": "1972-06-17", "end": "1974-08-09", "id": 145}, {"evento": "Febrero de 1973 (crisis previa al golpe, Uruguay)", "nota": "Febrero de 1973, el primer round del Golpe de Estado", "url": "https://delsol.uy/notoquennada/quirici/febrero-de-1973-el-primer-round-del-golpe-de-estado", "start": "1973-02-08", "end": "1973-02-12", "id": 146}, {"evento": "Masacre de Ezeiza", "nota": "La masacre de Ezeiza: un retorno de luto", "url": "https://delsol.uy/notoquennada/quirici/la-masacre-de-ezeiza-un-retorno-de-luto", "start": "1973-06-20", "end": "", "id": 147}, {"evento": "Dictadura uruguaya (1973-1985)", "nota": "Desafíos de la enseñanza de la Historia Reciente", "url": "https://delsol.uy/notoquennada/quirici/desafios-de-la-ensenanza-de-la-historia-reciente", "start": "1973-06-27", "end": "1985-03-01", "id": 148}, {"evento": "Golpe de Estado en Uruguay (1973)", "nota": "27 de junio: Gabriel Quirici repasa las horas previas y posteriores al Golpe de 1973", "url": "https://delsol.uy/notoquennada/quirici/27-de-junio-gabriel-quirici-repasa-las-horas-previas-y-posteriores-al-golpe-de-1973", "start": "1973-06-27", "end": "", "id": 149}, {"evento": "Golpe de Estado en Uruguay (1973)", "nota": "El detonante del golpe", "url": "https://delsol.uy/notoquennada/quirici/el-detonante-del-golpe", "start": "1973-06-27", "end": "", "id": 150}, {"evento": "Dictadura uruguaya (1973-1985)", "nota": "Historia de las memorias recientes", "url": "https://delsol.uy/notoquennada/quirici/historia-de-las-memorias-recientes", "start": "1973-06-27", "end": "1985-03-01", "id": 151}, {"evento": "Dictadura uruguaya (1973-1985)", "nota": "Sinforoso Sánchez y otras historias de la dictadura en Durazno", "url": "https://delsol.uy/notoquennada/quirici/sinforoso-sanchez-y-otras-historias-de-la-dictadura-en-durazno", "start": "1973-06-27", "end": "1985-03-01", "id": 152}, {"evento": "Dictadura uruguaya (1973-1985)", "nota": "Escribir la historia como sucedió y no como nos gustaría", "url": "https://delsol.uy/notoquennada/quirici/escribir-la-historia-como-sucedio-y-no-como-nos-gustaria", "start": "1973-06-27", "end": "1985-03-01", "id": 153}, {"evento": "Golpe de Estado en Chile (1973)", "nota": "A 50 años del 11 de setiembre en Chile: más allá de la guerra fría", "url": "https://delsol.uy/notoquennada/quirici/a-50-anos-del-11-de-setiembre-en-chile-mas-alla-de-la-guerra-fria", "start": "1973-09-11", "end": "", "id": 154}, {"evento": "Gobierno Den Siao Ping en china", "nota": "¿Es China socialista o capitalista? La respuesta no es tan simple", "url": "https://delsol.uy/notoquennada/quirici/es-china-socialista-o-capitalista-la-respuesta-no-es-tan-simple", "start": "1978-12-18", "end": "1989-11-09", "id": 155}, {"evento": "Revolución iraní (1979)", "nota": "Revolución iraní: a 40 años de la primera república islámica", "url": "https://delsol.uy/notoquennada/quirici/revolucion-irani-a-40-anos-de-la-primera-republica-islamica", "start": "1979-02-11", "end": "", "id": 156}, {"evento": "Plebiscito constitucional de 1980 (Uruguay)", "nota": "A 40 años del Plebiscito de 1980: un hito contemporáneo que renueva la ilusión", "url": "https://delsol.uy/notoquennada/quirici/a-40-anos-del-plebiscito-de-1980-un-hito-contemporaneo-que-renueva-la-ilusion", "start": "1980-11-30", "end": "", "id": 157}, {"evento": "Plebiscito de 1980 en Uruguay", "nota": "Voces democráticas contra los “rinocerontes”", "url": "https://delsol.uy/notoquennada/quirici/voces-democraticas-contra-los-rinocerontes", "start": "1980-11-30", "end": "", "id": 158}, {"evento": "Guerra de Malvinas", "nota": "Malvinas: épica televisiva y un plato histórico difícil de digerir", "url": "https://delsol.uy/notoquennada/quirici/malvinas-epica-televisiva-y-un-plato-historico-dificil-de-digerir", "start": "1982-04-02", "end": "1982-06-14", "id": 159}, {"evento": "Elecciones internas en dictadura (1982)", "nota": "A 40 años de las elecciones internas en Dictadura", "url": "https://delsol.uy/notoquennada/quirici/a-40-anos-de-las-elecciones-internas-en-dictadura", "start": "1982-11-28", "end": "", "id": 160}, {"evento": "1983: movilizaciones contra la dictadura (Uruguay)", "nota": "1983, el año en el que el pueblo recuperó la calle", "url": "https://delsol.uy/notoquennada/quirici/1983-el-ano-en-el-que-el-pueblo-recupero-la-calle", "start": "1983-01-01", "end": "1983-12-31", "id": 161}, {"evento": "Acto del 1º de Mayo de 1983 (Uruguay)", "nota": "Audios de la democracia: a 40 años del 1º de Mayo de 1983", "url": "https://delsol.uy/notoquennada/quirici/audios-de-la-democracia-a-40-anos-del-1º-de-mayo-de-1983", "start": "1983-05-01", "end": "", "id": 162}, {"evento": "Liberación de Líber Seregni (1984)", "nota": "A 40 años de la Liberación de Seregni: guardián del Frente Amplio y constructor de democracia", "url": "https://delsol.uy/notoquennada/quirici/a-40-anos-de-la-liberacion-de-seregni-guardian-del-frente-amplio-y-constructor-de-democracia", "start": "1984-03-19", "end": "", "id": 163}, {"evento": "Asesinato de Vladimir Roslik", "nota": "40 años del asesinato de Roslik, la cara expuesta de la última dictadura", "url": "https://delsol.uy/notoquennada/quirici/40-anos-del-asesinato-de-roslik-la-cara-expuesta-de-la-ultima-dictadura", "start": "1984-04-16", "end": "", "id": 164}, {"evento": "Pacto del Club Naval", "nota": "Sanguinetti, Wilson y la polémica viva a 40 años del Pacto del Club Naval", "url": "https://delsol.uy/notoquennada/quirici/sanguinetti-wilson-y-la-polemica-viva-a-40-anos-del-pacto-del-club-naval", "start": "1984-08-03", "end": "", "id": 165}, {"evento": "Libro Historia de los Orientales de Carlos Machado", "nota": "“Historia de los orientales”: una obra que no deja indiferente a nadie", "url": "https://delsol.uy/notoquennada/quirici/historia-de-los-orientales-una-obra-que-no-deja-indiferente-a-nadie", "start": "1985-01-01", "end": "", "id": 166}, {"evento": "Libro Historia de los Orientales de Carlos Machado", "nota": "Carlos Machado: el “pequeño Yoda” de la historiografía uruguaya", "url": "https://delsol.uy/notoquennada/quirici/carlos-machado-el-pequeno-yoda-de-la-historiografia-uruguaya", "start": "1985-01-01", "end": "", "id": 167}, {"evento": "Gorbachov y el fin de la URSS", "nota": "Las culpas del Gorbachov", "url": "https://delsol.uy/notoquennada/quirici/las-culpas-del-gorbachov", "start": "1985-03-11", "end": "1991-12-26", "id": 168}, {"evento": "Juicio a las Juntas (Argentina, 1985)", "nota": "La democratización de Argentina: una mirada histórica a propósito de “Argentina, 1985”", "url": "https://delsol.uy/notoquennada/quirici/la-democratizacion-de-argentina-una-mirada-historica-a-proposito-de-argentina-1985", "start": "1985-04-22", "end": "1985-12-09", "id": 169}, {"evento": "Menemismo (Carlos Menem)", "nota": "“A su son Menem nos usa”", "url": "https://delsol.uy/notoquennada/quirici/a-su-son-menem-nos-usa", "start": "1989-07-08", "end": "1999-12-10", "id": 170}, {"evento": "Guerras de los Balcanes (disolución de Yugoslavia)", "nota": "La última guerra de los Balcanes: xenofobia y manipulación cerrando el siglo", "url": "https://delsol.uy/notoquennada/quirici/la-ultima-guerra-de-los-balcanes-xenofobia-y-manipulacion-cerrando-el-siglo", "start": "1991-06-25", "end": "1999-06-10", "id": 171}, {"evento": "Independencia de Ucrania de URSS", "nota": "La marca de Ucrania en el tiempo (II)", "url": "https://delsol.uy/notoquennada/quirici/la-marca-de-ucrania-en-el-tiempo-ii", "start": "1991-08-24", "end": "", "id": 172}, {"evento": "Independencia de Ucrania de URSS", "nota": "La marca de Ucrania en el tiempo", "url": "https://delsol.uy/notoquennada/quirici/la-marca-de-ucrania-en-el-tiempo", "start": "1991-08-24", "end": "", "id": 173}, {"evento": "Retorno de hong kong de gran bretania a china", "nota": "Hong Kong: la historia de la ciudad asiática mundial", "url": "https://delsol.uy/notoquennada/quirici/hong-kong-la-historia-de-la-ciudad-asiatica-mundial", "start": "1997-07-01", "end": "", "id": 174}, {"evento": "Comienzo siglo 21", "nota": "Historia de las memorias recientes: siglo XXI", "url": "https://delsol.uy/notoquennada/quirici/historia-de-las-memorias-recientes-siglo-xxi", "start": "2001-01-01", "end": "", "id": 175}, {"evento": "Atentados del 11-S (Estados Unidos)", "nota": "A 20 años del 11S en Estados Unidos: la previa", "url": "https://delsol.uy/notoquennada/quirici/a-20-anos-del-11s-en-estados-unidos-la-previa", "start": "2001-09-11", "end": "", "id": 176}, {"evento": "Del 11-S al ISIS", "nota": "De las Torres Gemelas al ISIS", "url": "https://delsol.uy/notoquennada/quirici/de-las-torres-gemelas-al-isis", "start": "2001-09-11", "end": "", "id": 177}, {"evento": "Crisis económica de 2002 (Uruguay)", "nota": "Crisis en perspectiva histórica: lo que dejó el 2002", "url": "https://delsol.uy/notoquennada/quirici/crisis-en-perspectiva-historica-lo-que-dejo-el-2002", "start": "2002-01-01", "end": "2002-12-31", "id": 178}, {"evento": "Crisis de 2002 (Uruguay)", "nota": "Noticias de la crisis: 2002, cronología de un año tan grave como intenso", "url": "https://delsol.uy/notoquennada/quirici/noticias-de-la-crisis-2002-cronologia-de-un-ano-tan-grave-como-intenso", "start": "2002-01-01", "end": "2002-12-31", "id": 179}, {"evento": "Introducción del euro / Unión Europea", "nota": "El nacimiento de “otra idea” de Europa: la Unión Europea a 20 años del euro", "url": "https://delsol.uy/notoquennada/quirici/el-nacimiento-de-otra-idea-de-europa-la-union-europea-a-20-anos-del-euro", "start": "2002-01-01", "end": "", "id": 180}, {"evento": "Tabaré Vasquez Presidente Uruguay", "nota": "Tabaré, un nombre que reencontró la historia", "url": "https://delsol.uy/notoquennada/quirici/tabare-un-nombre-que-reencontro-la-historia", "start": "2005-03-01", "end": "2020-03-01", "id": 181}, {"evento": "Publicación del libro El miedo a los bárbaros de Todorov", "nota": "Todorov y una crítica democrática a la cultura del miedo", "url": "https://delsol.uy/notoquennada/quirici/todorov-y-una-critica-democratica-a-la-cultura-del-miedo", "start": "2008-01-01", "end": "", "id": 182}, {"evento": "Primavera Arabe", "nota": "Primaveras en la historia: brote, florecimiento y renacer de los procesos sociales", "url": "https://delsol.uy/notoquennada/quirici/primaveras-en-la-historia-brote-florecimiento-y-renacer-de-los-procesos-sociales", "start": "2010-12-17", "end": "2012-12-31", "id": 183}, {"evento": "Conflicto independentista Catalan", "nota": "“Los catalanes no somos épicos”", "url": "https://delsol.uy/notoquennada/quirici/los-catalanes-no-somos-epicos-somos-deprimentes", "start": "2017-10-01", "end": "", "id": 184}];
@@ -78,7 +175,7 @@ function yr(d){return d ? d.slice(0,4).replace(/^0+/,"") : "";}
 function build(row){
   // solo fecha de comienzo; cada item es un punto sobre la linea
   const content = '<a href="'+esc(row.url)+'" target="_blank" rel="noopener">'+esc(row.evento)+'</a>';
-  const tip = '<b>'+esc(row.evento)+'</b><br>'+esc(row.nota)+'<br><span style="color:#93a1bd">'+yr(row.start)+'</span>';
+  const tip = '<b>'+esc(row.evento)+'</b><br>'+esc(row.nota)+'<br><span style="color:#e8b866">'+yr(row.start)+'</span>';
   return {id:row.id, content:content, title:tip, start:row.start, type:"point",
           _ev:row.evento.toLowerCase(), _nota:(row.nota||"").toLowerCase(), url:row.url};
 }
@@ -88,6 +185,10 @@ const dataset = new vis.DataSet(all);
 document.getElementById("count").textContent = all.length + " episodios";
 
 const container = document.getElementById("tl");
+// fechas límite como objetos Date (el año 0 no se parsea bien como texto)
+function ymd(y,mo,da){ const t=new Date(2000,mo-1,da,0,0,0,0); t.setFullYear(y); return t; }
+const T_MIN = ymd(0,1,1), T_MAX = ymd(2050,12,31);
+
 const options = {
   stack:true,
   zoomable:true, moveable:true,
@@ -95,14 +196,42 @@ const options = {
   horizontalScroll:false,
   orientation:"top",
   margin:{item:{horizontal:6,vertical:6}},
-  maxHeight:"66vh", minHeight:"52vh",
+  maxHeight:"80vh",   // tope inicial; luego se ajusta a 8 filas de eventos
   tooltip:{followMouse:true, overflowMethod:"cap"},
+  min: T_MIN,                              // límite inferior: año 0
+  max: T_MAX,                              // límite superior: 2050
   zoomMin: 1000*60*60*24*30,               // ~1 mes
-  zoomMax: 1000*60*60*24*365*1400,         // ~1400 años
+  zoomMax: 1000*60*60*24*365*2100,         // ~2100 años (permite ver 0–2050 completo)
   format:{minorLabels:{year:"YYYY"}, majorLabels:{year:"YYYY"}}
 };
 const timeline = new vis.Timeline(container, dataset, options);
-timeline.fit();
+timeline.setWindow(T_MIN, T_MAX);
+
+/* ==== limitar la altura a 8 eventos apilados + aviso de "hacé más zoom" ==== */
+const CAP_ROWS = 8;
+const MARGIN_V = 6;                       // margin.item.vertical (ver opciones)
+const zoomNote = document.getElementById("zoomnote");
+let capApplied = -1;
+function stackCap(){
+  const anItem = container.querySelector(".vis-foreground .vis-item");
+  const fg = container.querySelector(".vis-foreground");
+  if(!anItem || !fg){ zoomNote.classList.remove("show"); return; }
+  const rowH = anItem.offsetHeight + MARGIN_V;      // alto de una fila de eventos
+  const content = fg.scrollHeight;                  // alto natural de todo lo apilado
+  const totalRows = Math.max(1, Math.round(content / rowH));
+  const axis = container.querySelector(".vis-panel.vis-top");
+  const axisH = axis ? axis.offsetHeight : 34;
+  const cap = Math.round(axisH + MARGIN_V + CAP_ROWS*rowH);   // altura de 8 filas
+  if(Math.abs(cap - capApplied) > 2){
+    capApplied = cap;
+    // altura fija de 8 filas: mismo min y max para que no se mueva
+    timeline.setOptions({maxHeight: cap+"px", minHeight: cap+"px"});
+  }
+  zoomNote.classList.toggle("show", totalRows > CAP_ROWS);
+}
+timeline.on("changed", stackCap);
+// re-medir cuando las fuentes terminan de cargar (cambia el alto de fila)
+if(document.fonts && document.fonts.ready){ document.fonts.ready.then(()=>{ capApplied=-1; timeline.redraw(); }); }
 
 // abrir link al seleccionar (además del <a>)
 timeline.on("select", function(p){
@@ -121,7 +250,7 @@ function zoom(f){
 }
 document.getElementById("zin").onclick = ()=>zoom(0.5);
 document.getElementById("zout").onclick = ()=>zoom(2);
-document.getElementById("fit").onclick = ()=>timeline.fit({animation:true});
+document.getElementById("fit").onclick = ()=>timeline.setWindow(T_MIN,T_MAX,{animation:true});
 
 // buscador
 const q = document.getElementById("q");
@@ -132,6 +261,173 @@ q.addEventListener("input", function(){
   dataset.add(all.filter(i => vis_ids.includes(i.id)));
   if(t && vis_ids.length){ timeline.fit({animation:true}); }
 });
+
+/* ====== MAPA MUNDIAL + RESALTADO EN HOVER ====== */
+// Ubicación representativa [lat, lon, lugar] por id de episodio
+const GEO = {
+  1:[50.45,30.52,"Rus de Kiev"], 2:[48.85,2.35,"París"], 3:[24.0,-74.5,"Guanahani (Bahamas)"],
+  4:[19.43,-99.13,"México-Tenochtitlan"], 5:[-34.9,-56.16,"Banda Oriental"], 6:[51.87,12.65,"Wittenberg"],
+  7:[36.78,-6.35,"Sanlúcar de Barrameda"], 8:[55.75,37.62,"Moscú"], 9:[-25.28,-57.63,"Asunción"],
+  10:[-9.42,-36.35,"Palmares (Alagoas)"], 11:[-27.25,-55.53,"Misiones guaraníes"], 12:[55.75,37.62,"Moscú"],
+  13:[35.68,139.69,"Edo (Tokio)"], 14:[-34.9,-56.16,"Montevideo"], 15:[-34.9,-56.16,"Montevideo"],
+  16:[-34.9,-56.16,"Montevideo"], 17:[-34.9,-56.16,"Montevideo"], 18:[-34.9,-56.16,"Montevideo"],
+  19:[-34.9,-56.16,"Montevideo"], 20:[39.95,-75.16,"Filadelfia"], 21:[39.95,-75.16,"Filadelfia"],
+  22:[-29.47,-56.82,"Yapeyú"], 23:[-29.47,-56.82,"Yapeyú"], 24:[-29.47,-56.82,"Yapeyú"],
+  25:[-34.9,-56.16,"Banda Oriental"], 26:[10.48,-66.90,"Caracas"], 27:[-34.37,-55.24,"Minas (UY)"],
+  28:[48.85,2.35,"París"], 29:[48.85,2.35,"París"], 30:[48.85,2.35,"París"],
+  31:[-34.9,-56.16,"Río de la Plata"], 32:[-34.9,-56.16,"Montevideo"], 33:[-34.9,-56.16,"Montevideo"],
+  34:[-33.25,-58.0,"Grito de Asencio (Soriano)"], 35:[-34.73,-56.22,"Las Piedras"], 36:[10.48,-66.90,"Caracas"],
+  37:[-31.0,-57.9,"Ayuí (Salto)"], 38:[-34.9,-56.16,"Montevideo"], 39:[-32.3,-58.1,"Purificación (Paysandú)"],
+  40:[-32.32,-58.08,"Paysandú"], 41:[49.75,6.64,"Tréveris"], 42:[-12.05,-77.04,"Lima"],
+  43:[-12.05,-77.04,"Lima"], 44:[-23.55,-46.61,"São Paulo (Ipiranga)"], 45:[-34.9,-56.16,"Montevideo"],
+  46:[14.63,-90.51,"Ciudad de Guatemala"], 47:[-34.10,-56.21,"Florida (UY)"], 48:[-34.10,-56.21,"Florida (UY)"],
+  49:[-34.10,-56.21,"Florida (UY)"], 50:[-22.9,-43.2,"Río de Janeiro"], 51:[-22.9,-43.2,"Río de Janeiro"],
+  52:[-34.9,-56.16,"Montevideo"], 53:[-34.9,-56.16,"Uruguay"], 54:[-34.9,-56.16,"Montevideo"],
+  55:[-34.9,-56.16,"Montevideo"], 56:[-34.9,-56.16,"Montevideo"], 57:[-31.7,-56.0,"Salsipuedes (Tacuarembó)"],
+  58:[-34.9,-56.16,"Montevideo"], 59:[-34.9,-56.16,"Montevideo"], 60:[-34.9,-56.16,"Montevideo"],
+  61:[-34.9,-56.16,"Montevideo"], 62:[-34.9,-56.16,"Montevideo"], 63:[30.0,32.55,"Canal de Suez"],
+  64:[-34.9,-56.16,"Montevideo"], 65:[-32.32,-58.08,"Paysandú"], 66:[55.75,37.62,"Moscú"],
+  67:[-34.9,-56.16,"Montevideo"], 68:[-34.9,-56.16,"Montevideo"], 69:[-34.9,-56.16,"Montevideo"],
+  70:[-34.9,-56.16,"Montevideo"], 71:[53.48,-2.24,"Mánchester"], 72:[-34.9,-56.16,"Montevideo"],
+  73:[41.88,-87.63,"Chicago (Haymarket)"], 74:[-34.87,-55.27,"Piriápolis"], 75:[-34.9,-56.16,"Montevideo"],
+  76:[-34.87,-55.27,"Piriápolis"], 77:[-32.37,-54.17,"Cerro Largo"], 78:[18.47,-66.11,"San Juan (PR)"],
+  79:[-34.9,-56.16,"Montevideo"], 80:[-34.9,-56.16,"Montevideo"], 81:[39.9,116.4,"Pekín"],
+  82:[-34.9,-56.9,"Río de la Plata"], 83:[-34.9,-56.16,"Montevideo"], 84:[-34.9,-56.16,"Montevideo"],
+  85:[-34.9,-56.16,"Montevideo"], 86:[-34.9,-56.16,"Montevideo"], 87:[-34.9,-56.16,"Montevideo"],
+  88:[-32.37,-54.17,"Cerro Largo"], 89:[-32.37,-54.17,"Cerro Largo"], 90:[43.85,18.38,"Sarajevo"],
+  91:[59.93,30.34,"San Petersburgo"], 92:[59.93,30.34,"Petrogrado"], 93:[59.93,30.34,"Petrogrado"],
+  94:[59.93,30.34,"Petrogrado"], 95:[59.93,30.34,"Petrogrado"], 96:[-34.9,-56.16,"Montevideo"],
+  97:[52.52,13.40,"Berlín"], 98:[41.9,12.5,"Roma"], 99:[41.9,12.5,"Roma"], 100:[41.9,12.5,"Roma"],
+  101:[50.98,11.33,"Weimar"], 102:[18.7,-99.1,"Morelos (México)"], 103:[-34.6,-58.4,"Buenos Aires"],
+  104:[-34.6,-58.4,"Buenos Aires"], 105:[-34.9,-56.16,"Montevideo"], 106:[-34.9,-56.16,"Montevideo"],
+  107:[41.9,12.5,"Roma"], 108:[53.35,-6.26,"Dublín"], 109:[55.75,37.62,"Moscú"], 110:[48.14,11.58,"Múnich"],
+  111:[-12.05,-77.04,"Lima"], 112:[48.92,2.25,"París (Colombes)"], 113:[-34.9,-56.16,"Montevideo"],
+  114:[38.9,-77.03,"Washington D.C."], 115:[33.75,-84.39,"Atlanta"], 116:[40.71,-74.01,"Nueva York"],
+  117:[52.52,13.40,"Berlín"], 118:[-34.9,-56.16,"Montevideo"], 119:[36.6,109.49,"Yan'an (China)"],
+  120:[19.43,-99.13,"Ciudad de México"], 121:[52.76,13.24,"Sachsenhausen"], 122:[43.32,-2.68,"Guernica"],
+  123:[40.42,-3.70,"Madrid"], 124:[52.52,13.40,"Europa"], 125:[52.23,21.01,"Varsovia"],
+  126:[49.42,-0.8,"Normandía"], 127:[44.79,20.45,"Belgrado"], 128:[28.61,77.21,"Delhi"],
+  129:[38.9,-77.03,"Washington D.C."], 130:[25.03,121.56,"Taipéi"], 131:[39.9,116.4,"Pekín"],
+  132:[14.63,-90.51,"Ciudad de Guatemala"], 133:[47.5,19.04,"Budapest"], 134:[5.6,-0.19,"Acra"],
+  135:[23.11,-82.36,"La Habana"], 136:[-15.79,-47.88,"Brasil"], 137:[-34.9,-56.16,"Montevideo"],
+  138:[-34.9,-56.16,"Montevideo"], 139:[48.85,2.35,"París"], 140:[19.45,-99.14,"Tlatelolco (México)"],
+  141:[-34.9,-56.16,"Montevideo"], 142:[-34.9,-56.16,"Montevideo"], 143:[54.99,-7.31,"Derry"],
+  144:[-34.9,-56.16,"Montevideo"], 145:[38.9,-77.03,"Washington D.C."], 146:[-34.9,-56.16,"Montevideo"],
+  147:[-34.81,-58.53,"Ezeiza (Buenos Aires)"], 148:[-34.9,-56.16,"Montevideo"], 149:[-34.9,-56.16,"Montevideo"],
+  150:[-34.9,-56.16,"Montevideo"], 151:[-34.9,-56.16,"Montevideo"], 152:[-33.38,-56.52,"Durazno (UY)"],
+  153:[-34.9,-56.16,"Montevideo"], 154:[-33.45,-70.66,"Santiago de Chile"], 155:[39.9,116.4,"Pekín"],
+  156:[35.69,51.39,"Teherán"], 157:[-34.9,-56.16,"Montevideo"], 158:[-34.9,-56.16,"Montevideo"],
+  159:[-51.7,-59.17,"Islas Malvinas"], 160:[-34.9,-56.16,"Montevideo"], 161:[-34.9,-56.16,"Montevideo"],
+  162:[-34.9,-56.16,"Montevideo"], 163:[-34.9,-56.16,"Montevideo"], 164:[-32.68,-58.13,"San Javier (Río Negro)"],
+  165:[-34.9,-56.16,"Montevideo"], 166:[-34.9,-56.16,"Montevideo"], 167:[-34.9,-56.16,"Montevideo"],
+  168:[55.75,37.62,"Moscú"], 169:[-34.6,-58.4,"Buenos Aires"], 170:[-34.6,-58.4,"Buenos Aires"],
+  171:[43.85,18.38,"Balcanes"], 172:[50.45,30.52,"Kiev"], 173:[50.45,30.52,"Kiev"],
+  174:[22.32,114.17,"Hong Kong"], 175:[-34.9,-56.16,"Uruguay"], 176:[40.71,-74.01,"Nueva York"],
+  177:[40.71,-74.01,"Nueva York"], 178:[-34.9,-56.16,"Montevideo"], 179:[-34.9,-56.16,"Montevideo"],
+  180:[50.85,4.35,"Bruselas"], 181:[-34.9,-56.16,"Montevideo"], 182:[48.85,2.35,"París"],
+  183:[35.04,9.48,"Sidi Bouzid (Túnez)"], 184:[41.39,2.17,"Barcelona"]
+};
+
+// agrupar episodios por ubicación (muchos comparten el mismo lugar)
+const LOC = {};
+Object.keys(GEO).forEach(id=>{
+  const g = GEO[id];
+  const key = g[0].toFixed(2)+","+g[1].toFixed(2);
+  if(!LOC[key]) LOC[key] = {lat:g[0], lon:g[1], place:g[2], ids:[]};
+  LOC[key].ids.push(+id);
+});
+
+const svg = d3.select("#map");
+const W = 1000, H = 500;
+const projection = d3.geoEquirectangular().fitSize([W, H], {type:"Sphere"});
+const path = d3.geoPath(projection);
+const gLand = svg.append("g");   // mar + continentes
+const gGrat = svg.append("g");   // gratícula (sobre la tierra)
+const gPts  = svg.append("g");   // marcadores de episodios
+const gRose = svg.append("g");   // rosa de los vientos
+const gHi   = svg.append("g");   // resaltado
+const mapEl = document.getElementById("map");
+const labelEl = document.getElementById("maplabel");
+
+// mar de pergamino (esfera de fondo)
+gLand.append("path").datum({type:"Sphere"}).attr("class","sea").attr("d", path);
+// gratícula (meridianos y paralelos) por encima de la tierra
+gGrat.append("path").attr("class","graticule").attr("d", path(d3.geoGraticule10()));
+
+// rosa de los vientos decorativa (esquina inferior derecha)
+(function(){
+  const cx=932, cy=418, R=26;
+  gRose.append("circle").attr("class","rose-ring").attr("cx",cx).attr("cy",cy).attr("r",R-4);
+  [[0,-1],[1,0],[0,1],[-1,0]].forEach(([dx,dy])=>{
+    const ex=cx+dx*R, ey=cy+dy*R, w=R*0.16;
+    gRose.append("path").attr("class","rose-pt")
+      .attr("d",`M${ex},${ey} L${cx-dy*w},${cy+dx*w} L${cx+dy*w},${cy-dx*w} Z`);
+  });
+  gRose.append("text").attr("class","rose-n").attr("x",cx).attr("y",cy-R-4).attr("text-anchor","middle").text("N");
+})();
+
+// anillo pulsante + punto resaltado
+const hiRing = gHi.append("circle").attr("class","hi-ring").attr("r",6);
+const hiDot  = gHi.append("circle").attr("class","hi-dot").attr("r",5);
+
+// cargar países y dibujarlos
+d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json").then(function(world){
+  const countries = topojson.feature(world, world.objects.countries);
+  gLand.selectAll("path.country")
+       .data(countries.features).enter()
+       .append("path").attr("class","country land").attr("d", path);
+  // un marcador clickeable por ubicación (agrupa los episodios que comparten lugar)
+  gPts.selectAll("circle").data(Object.values(LOC)).enter()
+      .append("circle").attr("class","allpt")
+      .attr("r", d => Math.min(6, 2.2 + Math.log2(d.ids.length)))
+      .attr("cx", d => projection([d.lon, d.lat])[0])
+      .attr("cy", d => projection([d.lon, d.lat])[1])
+      .on("mouseover", (e,d) => showLoc(d))
+      .on("mouseout", clearHi)
+      .on("click", (e,d) => selectLoc(d));
+}).catch(()=>{ /* si falla la carga del mapa, el hover simplemente no muestra nada */ });
+
+// resaltar una ubicación del mapa (con nombre del lugar y cantidad de episodios)
+function showLoc(d){
+  const p = projection([d.lon, d.lat]);
+  hiRing.attr("cx",p[0]).attr("cy",p[1]);
+  hiDot.attr("cx",p[0]).attr("cy",p[1]);
+  mapEl.classList.add("active");
+  const rect = mapEl.getBoundingClientRect();
+  const extra = d.ids.length>1 ? ' <span style="color:#c9ab7a">· '+d.ids.length+' episodios</span>' : '';
+  labelEl.innerHTML = "<b>"+d.place+"</b>"+extra;
+  labelEl.style.left = (p[0]/W*rect.width) + "px";
+  labelEl.style.top  = (p[1]/H*rect.height) + "px";
+  labelEl.style.opacity = "1";
+}
+// al tocar una ubicación: seleccionar y enfocar en la línea de tiempo los episodios de ese lugar
+function selectLoc(d){
+  timeline.setSelection(d.ids);
+  timeline.focus(d.ids, {animation:true});
+  showLoc(d);
+}
+
+function highlight(id){
+  const g = GEO[id];
+  if(!g){ clearHi(); return; }
+  const p = projection([g[1], g[0]]);
+  hiRing.attr("cx",p[0]).attr("cy",p[1]);
+  hiDot.attr("cx",p[0]).attr("cy",p[1]);
+  mapEl.classList.add("active");
+  // ubicar la etiqueta (coordenadas del SVG -> pixeles del contenedor)
+  const rect = mapEl.getBoundingClientRect();
+  labelEl.innerHTML = "<b>"+g[2]+"</b>";
+  labelEl.style.left = (p[0]/W*rect.width) + "px";
+  labelEl.style.top  = (p[1]/H*rect.height) + "px";
+  labelEl.style.opacity = "1";
+}
+function clearHi(){
+  mapEl.classList.remove("active");
+  labelEl.style.opacity = "0";
+}
+
+timeline.on("itemover", p => highlight(p.item));
+timeline.on("itemout",  clearHi);
 </script>
 </body>
 </html>
