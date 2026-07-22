@@ -190,7 +190,7 @@ document.getElementById("count").textContent = all.length + " episodios";
 const container = document.getElementById("tl");
 // fechas límite como objetos Date (el año 0 no se parsea bien como texto)
 function ymd(y,mo,da){ const t=new Date(2000,mo-1,da,0,0,0,0); t.setFullYear(y); return t; }
-const T_MIN = ymd(0,1,1), T_MAX = ymd(2050,12,31);
+const T_MIN = ymd(800,1,1), T_MAX = ymd(2050,12,31);
 
 const options = {
   stack:true,
@@ -201,7 +201,7 @@ const options = {
   margin:{item:{horizontal:6,vertical:6}},
   maxHeight:"80vh",   // tope inicial; luego se ajusta a 8 filas de eventos
   tooltip:{followMouse:true, overflowMethod:"cap"},
-  min: T_MIN,                              // límite inferior: año 0
+  min: T_MIN,                              // límite inferior: año 800
   max: T_MAX,                              // límite superior: 2050
   zoomMin: 1000*60*60*24*30,               // ~1 mes
   zoomMax: 1000*60*60*24*365*2100,         // ~2100 años (permite ver 0–2050 completo)
