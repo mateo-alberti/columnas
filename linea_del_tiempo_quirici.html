@@ -99,14 +99,14 @@
   #map .hit{fill:transparent}
   #map .loc{cursor:pointer}
   #map .loc:hover .allpt{fill:var(--accent);opacity:1}
-  #map .hi-ring{fill:none;stroke:var(--accent);stroke-width:2.5px;opacity:0}
-  #map .hi-dot{fill:var(--accent);stroke:#f7eed6;stroke-width:1.5px;opacity:0}
+  #map .hi-ring{fill:none;stroke:var(--accent);stroke-width:2.5px;opacity:0;pointer-events:none}
+  #map .hi-dot{fill:var(--accent);stroke:#f7eed6;stroke-width:1.5px;opacity:0;pointer-events:none}
   #map.active .hi-ring{opacity:.9;animation:pulse 1.4s ease-out infinite}
   #map.active .hi-dot{opacity:1}
   @keyframes pulse{0%{r:6px;opacity:.9}70%{r:26px;opacity:0}100%{r:26px;opacity:0}}
-  #map .rose-ring{fill:none;stroke:var(--gold);stroke-width:1}
-  #map .rose-pt{fill:#7a5a2e}
-  #map .rose-n{fill:#5c4620;font-family:"Cinzel",serif;font-size:12px;font-weight:600}
+  #map .rose-ring{fill:none;stroke:var(--gold);stroke-width:1;pointer-events:none}
+  #map .rose-pt{fill:#7a5a2e;pointer-events:none}
+  #map .rose-n{fill:#5c4620;font-family:"Cinzel",serif;font-size:12px;font-weight:600;pointer-events:none}
   #maplabel{position:absolute;pointer-events:none;background:#33261a;color:#f3ead2;
        border:1px solid var(--gold);border-radius:3px;padding:6px 10px;font-size:13px;
        font-family:"EB Garamond",Georgia,serif;
