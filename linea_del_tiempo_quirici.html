@@ -95,8 +95,10 @@
   #map .sea{fill:#e2d2a8}
   #map .land{fill:#cdb387;stroke:#9a7f52;stroke-width:.6px}
   #map .graticule{fill:none;stroke:#9a7f52;stroke-width:.4px;opacity:.35}
-  #map .allpt{fill:#6f5836;opacity:.5;cursor:pointer;transition:fill .12s,opacity .12s}
-  #map .allpt:hover{fill:var(--accent);opacity:1}
+  #map .allpt{fill:#6f5836;opacity:.55;pointer-events:none;transition:fill .12s,opacity .12s}
+  #map .hit{fill:transparent}
+  #map .loc{cursor:pointer}
+  #map .loc:hover .allpt{fill:var(--accent);opacity:1}
   #map .hi-ring{fill:none;stroke:var(--accent);stroke-width:2.5px;opacity:0}
   #map .hi-dot{fill:var(--accent);stroke:#f7eed6;stroke-width:1.5px;opacity:0}
   #map.active .hi-ring{opacity:.9;animation:pulse 1.4s ease-out infinite}
@@ -377,15 +379,17 @@ d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json").then(f
   gLand.selectAll("path.country")
        .data(countries.features).enter()
        .append("path").attr("class","country land").attr("d", path);
-  // un marcador clickeable por ubicación (agrupa los episodios que comparten lugar)
-  gPts.selectAll("circle").data(Object.values(LOC)).enter()
-      .append("circle").attr("class","allpt")
-      .attr("r", d => Math.min(6, 2.2 + Math.log2(d.ids.length)))
-      .attr("cx", d => projection([d.lon, d.lat])[0])
-      .attr("cy", d => projection([d.lon, d.lat])[1])
+  // un marcador por ubicación (agrupa los episodios que comparten lugar).
+  // Cada uno tiene un área de click invisible más amplia + el punto visible.
+  const dotR = d => Math.min(6.5, 3 + Math.log2(d.ids.length));
+  const loc = gPts.selectAll("g.loc").data(Object.values(LOC)).enter()
+      .append("g").attr("class","loc")
+      .attr("transform", d => { const p=projection([d.lon,d.lat]); return "translate("+p[0]+","+p[1]+")"; })
       .on("mouseover", (e,d) => showLoc(d))
       .on("mouseout", clearHi)
       .on("click", (e,d) => selectLoc(d));
+  loc.append("circle").attr("class","hit").attr("r", d => Math.max(12, dotR(d)+8));
+  loc.append("circle").attr("class","allpt").attr("r", dotR);
 }).catch(()=>{ /* si falla la carga del mapa, el hover simplemente no muestra nada */ });
 
 // resaltar una ubicación del mapa (con nombre del lugar y cantidad de episodios)
