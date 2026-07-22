@@ -92,9 +92,12 @@
        background:#e9dcbb;position:relative;
        box-shadow:0 0 0 4px #e9dcbb,0 0 0 5px var(--line2),0 8px 26px rgba(80,55,25,.22)}
   #map{display:block;width:100%;height:auto}
+  #map{cursor:grab}
+  #map:active{cursor:grabbing}
   #map .sea{fill:#e2d2a8}
   #map .land{fill:#cdb387;stroke:#9a7f52;stroke-width:.6px}
   #map .graticule{fill:none;stroke:#9a7f52;stroke-width:.4px;opacity:.35}
+  #map .land,#map .graticule,#map .hi-ring,#map .hi-dot{vector-effect:non-scaling-stroke}
   #map .allpt{fill:#6f5836;opacity:.55;pointer-events:none;transition:fill .12s,opacity .12s}
   #map .hit{fill:transparent}
   #map .loc{cursor:pointer}
@@ -113,6 +116,11 @@
        max-width:240px;box-shadow:0 8px 24px rgba(50,35,15,.5);opacity:0;transform:translate(-50%,-125%);
        transition:opacity .12s;white-space:nowrap}
   #maplabel b{color:#e8b866}
+  .mapzoom{position:absolute;top:10px;right:10px;display:flex;flex-direction:column;gap:5px;z-index:7}
+  .mapzoom button{width:32px;height:32px;padding:0;font-size:17px;line-height:1;
+       font-family:"EB Garamond",Georgia,serif;background:#f0e5ca;border:1px solid var(--line2);
+       color:var(--ink2);border-radius:3px;cursor:pointer;box-shadow:0 1px 3px rgba(80,55,25,.3);transition:.15s}
+  .mapzoom button:hover{border-color:var(--accent);color:var(--accent);background:#f7eed6}
 
   /* ---- mobile ---- */
   @media (max-width:640px){
@@ -167,6 +175,11 @@
 <div id="mapwrap">
   <svg id="map" viewBox="0 0 1000 500" preserveAspectRatio="xMidYMid meet"></svg>
   <div id="maplabel"></div>
+  <div class="mapzoom">
+    <button id="mzin" type="button" aria-label="Acercar">＋</button>
+    <button id="mzout" type="button" aria-label="Alejar">－</button>
+    <button id="mzreset" type="button" aria-label="Restablecer vista">⟲</button>
+  </div>
 </div>
 
 <script>
@@ -348,13 +361,17 @@ const svg = d3.select("#map");
 const W = 1000, H = 500;
 const projection = d3.geoEquirectangular().fitSize([W, H], {type:"Sphere"});
 const path = d3.geoPath(projection);
-const gLand = svg.append("g");   // mar + continentes
-const gGrat = svg.append("g");   // gratícula (sobre la tierra)
-const gPts  = svg.append("g");   // marcadores de episodios
-const gRose = svg.append("g");   // rosa de los vientos
-const gHi   = svg.append("g");   // resaltado
+const gZoom = svg.append("g");   // capa que se transforma al hacer zoom
+const gLand = gZoom.append("g"); // mar + continentes
+const gGrat = gZoom.append("g"); // gratícula (sobre la tierra)
+const gPts  = gZoom.append("g"); // marcadores de episodios
+const gRose = svg.append("g");   // rosa de los vientos (fija)
+const gHi   = svg.append("g");   // resaltado (fijo, se reubica según el zoom)
 const mapEl = document.getElementById("map");
 const labelEl = document.getElementById("maplabel");
+const dotR = d => Math.min(6.5, 3 + Math.log2(d.ids.length));
+let currentT = d3.zoomIdentity;  // transform de zoom actual
+let activeP = null;              // punto resaltado en coords del viewBox
 
 // mar de pergamino (esfera de fondo)
 gLand.append("path").datum({type:"Sphere"}).attr("class","sea").attr("d", path);
@@ -385,7 +402,6 @@ d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json").then(f
        .append("path").attr("class","country land").attr("d", path);
   // un marcador por ubicación (agrupa los episodios que comparten lugar).
   // Cada uno tiene un área de click invisible más amplia + el punto visible.
-  const dotR = d => Math.min(6.5, 3 + Math.log2(d.ids.length));
   const loc = gPts.selectAll("g.loc").data(Object.values(LOC)).enter()
       .append("g").attr("class","loc")
       .attr("transform", d => { const p=projection([d.lon,d.lat]); return "translate("+p[0]+","+p[1]+")"; })
@@ -396,47 +412,74 @@ d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json").then(f
   loc.append("circle").attr("class","allpt").attr("r", dotR);
 }).catch(()=>{ /* si falla la carga del mapa, el hover simplemente no muestra nada */ });
 
-// resaltar una ubicación del mapa (con nombre del lugar y cantidad de episodios)
-function showLoc(d){
-  const p = projection([d.lon, d.lat]);
-  hiRing.attr("cx",p[0]).attr("cy",p[1]);
-  hiDot.attr("cx",p[0]).attr("cy",p[1]);
-  mapEl.classList.add("active");
+// reubica anillo + punto + etiqueta según el punto activo y el zoom actual
+function reposition(){
+  if(!activeP) return;
+  const tp = currentT.apply(activeP);           // viewBox -> coords tras el zoom
+  hiRing.attr("cx",tp[0]).attr("cy",tp[1]);
+  hiDot.attr("cx",tp[0]).attr("cy",tp[1]);
   const rect = mapEl.getBoundingClientRect();
-  const extra = d.ids.length>1 ? ' <span style="color:#c9ab7a">· '+d.ids.length+' episodios</span>' : '';
-  labelEl.innerHTML = "<b>"+d.place+"</b>"+extra;
-  labelEl.style.left = (p[0]/W*rect.width) + "px";
-  labelEl.style.top  = (p[1]/H*rect.height) + "px";
+  labelEl.style.left = (tp[0]/W*rect.width) + "px";
+  labelEl.style.top  = (tp[1]/H*rect.height) + "px";
+}
+// mostrar el resaltado en un punto del viewBox con una etiqueta
+function showAt(p, html){
+  activeP = p;
+  labelEl.innerHTML = html;
+  mapEl.classList.add("active");
+  reposition();
   labelEl.style.opacity = "1";
 }
-// al tocar una ubicación: seleccionar y enfocar en la línea de tiempo los episodios de ese lugar
+// resaltar una ubicación del mapa (nombre + cantidad de episodios)
+function showLoc(d){
+  const extra = d.ids.length>1 ? ' <span style="color:#c9ab7a">· '+d.ids.length+' episodios</span>' : '';
+  showAt(projection([d.lon, d.lat]), "<b>"+d.place+"</b>"+extra);
+}
+// al tocar una ubicación: seleccionar y enfocar sus episodios en la línea de tiempo
 function selectLoc(d){
   timeline.setSelection(d.ids);
   timeline.focus(d.ids, {animation:true});
   showLoc(d);
 }
-
+// resaltar desde la línea de tiempo (hover sobre un episodio)
 function highlight(id){
   const g = GEO[id];
   if(!g){ clearHi(); return; }
-  const p = projection([g[1], g[0]]);
-  hiRing.attr("cx",p[0]).attr("cy",p[1]);
-  hiDot.attr("cx",p[0]).attr("cy",p[1]);
-  mapEl.classList.add("active");
-  // ubicar la etiqueta (coordenadas del SVG -> pixeles del contenedor)
-  const rect = mapEl.getBoundingClientRect();
-  labelEl.innerHTML = "<b>"+g[2]+"</b>";
-  labelEl.style.left = (p[0]/W*rect.width) + "px";
-  labelEl.style.top  = (p[1]/H*rect.height) + "px";
-  labelEl.style.opacity = "1";
+  showAt(projection([g[1], g[0]]), "<b>"+g[2]+"</b>");
 }
 function clearHi(){
   mapEl.classList.remove("active");
   labelEl.style.opacity = "0";
+  activeP = null;
 }
 
 timeline.on("itemover", p => highlight(p.item));
 timeline.on("itemout",  clearHi);
+
+/* ==== zoom del mapa: rueda, arrastrar y botones (en mobile: 2 dedos o botones) ==== */
+const mapZoom = d3.zoom()
+  .scaleExtent([1, 10])
+  .extent([[0,0],[W,H]])
+  .translateExtent([[0,0],[W,H]])
+  .filter(e => {
+    if(e.type === "wheel") return !e.ctrlKey;
+    if(e.type && e.type.indexOf("touch") === 0) return e.touches && e.touches.length >= 2;
+    if(e.type === "mousedown") return e.button === 0;
+    return true;
+  })
+  .on("zoom", e => {
+    currentT = e.transform;
+    gZoom.attr("transform", e.transform);
+    const k = e.transform.k;
+    // contra-escalar marcadores para que mantengan tamaño constante en pantalla
+    gPts.selectAll("circle.allpt").attr("r", d => dotR(d)/k);
+    gPts.selectAll("circle.hit").attr("r", d => Math.max(12, dotR(d)+8)/k);
+    reposition();
+  });
+svg.call(mapZoom).on("dblclick.zoom", null);
+document.getElementById("mzin").onclick    = () => svg.transition().duration(250).call(mapZoom.scaleBy, 1.6);
+document.getElementById("mzout").onclick   = () => svg.transition().duration(250).call(mapZoom.scaleBy, 1/1.6);
+document.getElementById("mzreset").onclick = () => svg.transition().duration(300).call(mapZoom.transform, d3.zoomIdentity);
 </script>
 </body>
 </html>
