@@ -236,12 +236,16 @@ timeline.on("changed", stackCap);
 // re-medir cuando las fuentes terminan de cargar (cambia el alto de fila)
 if(document.fonts && document.fonts.ready){ document.fonts.ready.then(()=>{ capApplied=-1; timeline.redraw(); }); }
 
-// abrir link al seleccionar (además del <a>)
+// abrir la nota en una pestaña nueva al seleccionar un episodio
 timeline.on("select", function(p){
-  if(p.items && p.items.length){
-    const it = dataset.get(p.items[0]);
-    if(it && it.url) window.open(it.url, "_blank", "noopener");
-  }
+  if(!p.items || !p.items.length) return;
+  const it = dataset.get(p.items[0]);
+  if(!it || !it.url) return;
+  // si el click fue sobre el propio enlace, el <a target="_blank"> ya lo abre
+  const onAnchor = p.event && p.event.target && p.event.target.closest && p.event.target.closest("a");
+  if(onAnchor) return;
+  const w = window.open(it.url, "_blank");   // pestaña nueva (sin features -> no popup)
+  if(w) w.opener = null;                     // seguridad: sin acceso al opener
 });
 
 // controles de zoom
